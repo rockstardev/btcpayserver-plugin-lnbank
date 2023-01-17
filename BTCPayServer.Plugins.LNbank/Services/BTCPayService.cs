@@ -42,11 +42,12 @@ public class BTCPayService
         return await client.GetLightningPayment(CryptoCode, paymentHash, cancellationToken);
     }
 
-    public async Task<LightningInvoiceData> GetLightningInvoice(string invoiceId,
+    public async Task<LightningInvoiceData> GetLightningInvoice(string paymentHash,
         CancellationToken cancellationToken = default)
     {
         BTCPayServerClient client = await Client();
-        return await client.GetLightningInvoice(CryptoCode, invoiceId, cancellationToken);
+        return await client.GetLightningInvoice(CryptoCode, paymentHash, cancellationToken);
+    }
     }
 
     public async Task<LightningNodeInformationData> GetLightningNodeInfo(CancellationToken cancellationToken = default)

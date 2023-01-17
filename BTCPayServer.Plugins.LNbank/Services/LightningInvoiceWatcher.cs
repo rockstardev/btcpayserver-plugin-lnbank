@@ -19,7 +19,7 @@ public class LightningInvoiceWatcher : BackgroundService
     private static readonly TimeSpan _checkInterval = TimeSpan.FromSeconds(5);
 
     // grace period before starting to check a pending transaction, which is inflight
-    // and might get handled in the request context that initiated the payment 
+    // and might get handled in the request context that initiated the payment
     private static readonly TimeSpan _inflightDelay = WalletService.SendTimeout + _checkInterval;
     private readonly BTCPayService _btcpayService;
     private readonly ILogger<LightningInvoiceWatcher> _logger;
@@ -107,7 +107,7 @@ public class LightningInvoiceWatcher : BackgroundService
 
         try
         {
-            invoice = await _btcpayService.GetLightningInvoice(transaction.InvoiceId, cancellationToken);
+            invoice = await _btcpayService.GetLightningInvoice(transaction.PaymentHash, cancellationToken);
         }
         catch (GreenfieldAPIException apiException) when (apiException.APIError.Code == "invoice-not-found")
         {

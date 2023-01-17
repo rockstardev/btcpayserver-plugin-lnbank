@@ -111,9 +111,9 @@ public class WalletService
                 $"Insufficient balance: {Sats(wallet.Balance)} — tried to send {Sats(amount)}.");
 
         // check if the invoice exists already
-        string paymentRequest = bolt11.ToString();
-        Transaction? receivingTransaction = await ValidatePaymentRequest(paymentRequest);
-        bool isInternal = !string.IsNullOrEmpty(receivingTransaction?.InvoiceId);
+        var paymentRequest = bolt11.ToString();
+        var receivingTransaction = await ValidatePaymentRequest(paymentRequest);
+        var isInternal = !string.IsNullOrEmpty(receivingTransaction?.InvoiceId);
 
         var sendingTransaction = new Transaction
         {
@@ -218,7 +218,7 @@ public class WalletService
             };
 
             LightningPaymentData? result = await _btcpayService.PayLightningInvoice(request, cancellationToken);
-            
+
             // Check result
             if (result.TotalAmount == null)
                 throw new PaymentRequestValidationException("Payment request has already been paid.");
@@ -309,8 +309,7 @@ public class WalletService
 
     public async Task<bool> Cancel(string invoiceId)
     {
-        Transaction? transaction =
-            await _walletRepository.GetTransaction(new TransactionQuery { InvoiceId = invoiceId });
+        var transaction = await _walletRepository.GetTransaction(new TransactionQuery { InvoiceId = invoiceId });
 
         return await Cancel(transaction);
     }
@@ -403,6 +402,7 @@ public class WalletService
                 transaction.Status,
                 transaction.IsPaid,
                 transaction.IsExpired,
+                transaction.PaymentHash,
                 Event = eventName
             });
     }
