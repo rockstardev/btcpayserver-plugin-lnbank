@@ -26,7 +26,7 @@
     </div>
     <div class="row justify-content-center mb-5">
         <div class="col text-center">
-            <h2 id="LNbank-TransactionDescription">@ViewData["Title"]</h2>
+            <h2 id="LNbank-TransactionTitle">@ViewData["Title"]</h2>
             @if (Model.Transaction.IsPaid || Model.Transaction.IsSettled)
             {
                 <h3 id="LNbank-TransactionSettled" class="text-success">
@@ -53,7 +53,7 @@
                     @Helpers.Sats(Model.Transaction.Amount)
                     @Model.Transaction.Status
                 </h3>
-                
+
                 @if (!Model.Transaction.IsCancelled)
                 {
                     <h4 class="h4 text-muted">
@@ -61,16 +61,16 @@
                         @Model.Transaction.ExpiresAt.ToBrowserDate(ViewsRazor.DateDisplayFormat.Relative)
                     </h4>
                 }
-        
+
                 @if (!Model.Transaction.IsExpired && !Model.Transaction.IsCancelled)
-                {                                                                                                               
+                {
                     <div class="qrcode mt-4" data-clipboard-confirm-element="LNbank-QRText" data-clipboard="@Model.Transaction.PaymentRequest" id="LNbank-QRContainer">
                         @await Component.InvokeAsync("QRCode", new { data = Model.Transaction.PaymentRequest })
                     </div>
                     <div class="mt-2 mb-4">
                         <small id="LNbank-QRText" class="qrtext">Scan the QR code, or tap to copy the address.</small>
                     </div>
-                        
+
                     <script>
                         (function () {
                             window.LNbank.hubs.push({

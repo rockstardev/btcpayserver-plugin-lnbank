@@ -28,7 +28,7 @@
     </div>
     <div class="row justify-content-center mb-5">
         <div class="col text-center">
-            <h2 id="LNbank-TransactionDescription">@ViewData["Title"]</h2>
+            <h2 id="LNbank-TransactionTitle">@ViewData["Title"]</h2>
             <p class="mx-auto">Use <a href="@lnurl" rel="noreferrer noopener">this LNURL</a> to pay an invoice to this wallet.</p>
             <div class="qrcode" data-clipboard-confirm-element="LNbank-QRText" data-clipboard="@lnurl.ToString().ToUpperInvariant()" id="LNbank-QRContainer">
                 @await Component.InvokeAsync("QRCode", new { data = lnurl.ToString().ToUpperInvariant() })

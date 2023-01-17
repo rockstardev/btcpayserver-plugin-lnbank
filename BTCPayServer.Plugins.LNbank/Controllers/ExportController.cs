@@ -79,6 +79,8 @@ public class ExportController : Controller
         InvoiceId = t.InvoiceId,
         Description = t.Description,
         PaymentRequest = t.PaymentRequest,
+        PaymentHash = t.PaymentHash,
+        Preimage = t.Preimage,
         Status = t.Status,
         Amount = t.Amount?.MilliSatoshi,
         AmountSettled = t.AmountSettled?.MilliSatoshi,
@@ -93,6 +95,8 @@ public class ExportController : Controller
         public string InvoiceId { get; set; }
         public string Description { get; set; }
         public string PaymentRequest { get; set; }
+        public string PaymentHash { get; set; }
+        public string Preimage { get; set; }
         public string Status { get; set; }
         public long? Amount { get; set; }
         public long? AmountSettled { get; set; }

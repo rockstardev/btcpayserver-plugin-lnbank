@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Contracts;
 using BTCPayServer.Client;
 using BTCPayServer.Client.Models;
-using Microsoft.Extensions.Configuration;
+using BTCPayServer.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace BTCPayServer.Plugins.LNbank.Services;
 
@@ -15,10 +15,11 @@ public class BTCPayService
     private readonly IBTCPayServerClientFactory _clientFactory;
     public bool HasInternalNode { get; init; }
 
-    public BTCPayService(IBTCPayServerClientFactory clientFactory, IConfiguration config)
+    public BTCPayService(
+        IBTCPayServerClientFactory clientFactory,
+        IOptions<LightningNetworkOptions> lightningNetworkOptions)
     {
-        var internalLightning = config.GetChildren().FirstOrDefault(a => a.Key == $"{CryptoCode}LIGHTNING");
-        HasInternalNode = !string.IsNullOrEmpty(internalLightning.Value);
+        HasInternalNode = lightningNetworkOptions.Value.InternalLightningByCryptoCode.TryGetValue(CryptoCode, out _);
         _clientFactory = clientFactory;
     }
 
@@ -47,7 +48,6 @@ public class BTCPayService
     {
         BTCPayServerClient client = await Client();
         return await client.GetLightningInvoice(CryptoCode, paymentHash, cancellationToken);
-    }
     }
 
     public async Task<LightningNodeInformationData> GetLightningNodeInfo(CancellationToken cancellationToken = default)
