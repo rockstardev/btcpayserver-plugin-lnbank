@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add transaction details (payment hash, preimage) to view.
 - LNDhub API: Add additional node info.
 - Handle sub 1 sat (millisat) balances better. (btcpayserver/btcpayserver#4517)
+- Add retries before invalidating invoices and payments.
 
 ### Fixed
 

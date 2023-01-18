@@ -25,6 +25,7 @@ public class LightningInvoiceWatcher : BackgroundService
     private readonly ILogger<LightningInvoiceWatcher> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly WalletRepository _walletRepository;
+    private readonly Dictionary<string, int> _retries = new ();
 
     public LightningInvoiceWatcher(
         BTCPayService btcpayService,
@@ -112,7 +113,7 @@ public class LightningInvoiceWatcher : BackgroundService
         catch (GreenfieldAPIException apiException) when (apiException.APIError.Code == "invoice-not-found")
         {
             errorDetails = apiException.Message;
-            invalidate = true;
+            invalidate = InvalidateAfterRetries(transaction.PaymentHash, 5);
         }
         catch (Exception exception)
         {
@@ -161,7 +162,7 @@ public class LightningInvoiceWatcher : BackgroundService
         catch (GreenfieldAPIException apiException) when (apiException.APIError.Code == "payment-not-found")
         {
             errorDetails = apiException.Message;
-            invalidate = true;
+            invalidate = InvalidateAfterRetries(transaction.PaymentHash, 5);
         }
         catch (Exception exception)
         {
@@ -173,7 +174,7 @@ public class LightningInvoiceWatcher : BackgroundService
             bool isInflight = transaction.IsPending && transaction.CreatedAt > DateTimeOffset.Now - _inflightDelay;
             if (!isInflight)
             {
-                invalidate = true;
+                invalidate = InvalidateAfterRetries(transaction.PaymentHash, 3);
                 _logger.LogWarning(
                     "Unable to resolve payment (Payment Hash = {PaymentHash}) for transaction {TransactionId}{Details}",
                     transaction.PaymentHash, transaction.TransactionId,
@@ -207,5 +208,15 @@ public class LightningInvoiceWatcher : BackgroundService
                     transaction.TransactionId, payment.Status.ToString());
                 break;
         }
+    }
+
+    private bool InvalidateAfterRetries(string id, int max)
+    {
+        if (!_retries.ContainsKey(id))
+            _retries.Add(id, 1);
+        else
+            _retries[id] += 1;
+
+        return _retries[id] >= max;
     }
 }
