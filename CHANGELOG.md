@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.10]
+
+### Added
+
+- Add retries before invalidating invoices and payments.
+
 ## [1.3.9]
 
 ### Changed
@@ -13,7 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add transaction details (payment hash, preimage) to view.
 - LNDhub API: Add additional node info.
 - Handle sub 1 sat (millisat) balances better. (btcpayserver/btcpayserver#4517)
-- Add retries before invalidating invoices and payments.
 
 ### Fixed
 
