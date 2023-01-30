@@ -183,8 +183,8 @@ public class WalletRepository
             queryable = wallet.Transactions.AsQueryable();
         }
 
-        if (query.InvoiceId != null)
-            queryable = queryable.Where(t => t.InvoiceId == query.InvoiceId);
+        if (query.InvoiceId != null) // due to legacy reasons we need to fallback to check the payment hash too
+            queryable = queryable.Where(t => t.InvoiceId == query.InvoiceId || t.PaymentHash == query.InvoiceId);
         else if (query.HasInvoiceId)
             queryable = queryable.Where(t => t.InvoiceId != null);
 

@@ -170,8 +170,8 @@ public class LightningController : ControllerBase
         }
     }
 
-    [HttpGet("invoice/{paymentHash}")]
-    public async Task<IActionResult> GetLightningInvoice(string paymentHash)
+    [HttpGet("invoice/{paymentHashOrInvoiceId}")]
+    public async Task<IActionResult> GetLightningInvoice(string paymentHashOrInvoiceId)
     {
         try
         {
@@ -179,7 +179,7 @@ public class LightningController : ControllerBase
             {
                 UserId = UserId,
                 WalletId = WalletId,
-                PaymentHash = paymentHash
+                InvoiceId = paymentHashOrInvoiceId
             });
             if (transaction == null)
                 return this.CreateAPIError(404, "invoice-not-found", "The invoice was not found");
