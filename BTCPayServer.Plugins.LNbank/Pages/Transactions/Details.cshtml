@@ -29,44 +29,6 @@
                 <span>Awaiting confirmation</span>
             }
         </h4>
-        <dl class="row" id="LNbank-TransactionDetails">
-            <dt class="col-sm-3 col-xl-2">
-                @Html.DisplayNameFor(model => model.Transaction.Description)
-            </dt>
-            <dd class="col-sm-9 col-xl-10 d-inline-flex align-items-center gap-2">
-                <span id="LNbank-TransactionDescription">@Model.Transaction.Description</span>
-                <a asp-page="./Edit" asp-route-walletId="@Model.Wallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId">
-                    Edit
-                </a>
-            </dd>
-            <dt class="col-sm-3 col-xl-2">
-                @Html.DisplayNameFor(model => model.Transaction.PaidAt)
-            </dt>
-            <dd class="col-sm-9 col-xl-10" id="LNbank-TransactionPaidAt">
-                @Model.Transaction.PaidAt?.ToBrowserDate()
-            </dd>
-            <dt class="col-sm-3 col-xl-2">
-                @Html.DisplayNameFor(model => model.Transaction.PaymentRequest)
-            </dt>
-            <dd class="col-sm-9 col-xl-10 text-break">
-                <span class="text-truncate d-block" style="max-width:400px">@Model.Transaction.PaymentRequest</span>
-            </dd>
-            <dt class="col-sm-3 col-xl-2">
-                @Html.DisplayNameFor(model => model.Transaction.PaymentHash)
-            </dt>
-            <dd class="col-sm-9 col-xl-10">
-                @Model.Transaction.PaymentHash
-            </dd>
-            @if (!string.IsNullOrEmpty(Model.Transaction.Preimage))
-            {
-                <dt class="col-sm-3 col-xl-2">
-                    @Html.DisplayNameFor(model => model.Transaction.Preimage)
-                </dt>
-                <dd class="col-sm-9 col-xl-10">
-                    @Model.Transaction.Preimage
-                </dd>
-            }
-        </dl>
     }
     else
     {
@@ -110,4 +72,64 @@
             </script>
         }
     }
+    <dl class="row" id="LNbank-TransactionDetails">
+        <dt class="col-sm-3 col-xl-2">
+            @Html.DisplayNameFor(model => model.Transaction.Description)
+        </dt>
+        <dd class="col-sm-9 col-xl-10 d-inline-flex align-items-center gap-2">
+            @if (!string.IsNullOrEmpty(Model.Transaction.Description))
+            {
+                <span id="LNbank-TransactionDescription">@Model.Transaction.Description</span>
+            }
+            <a asp-page="./Edit" asp-route-walletId="@Model.Wallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId">Edit</a>
+        </dd>
+        @if (Model.Transaction.IsPaid || Model.Transaction.IsSettled)
+        {
+            <dt class="col-sm-3 col-xl-2">
+                @Html.DisplayNameFor(model => model.Transaction.PaidAt)
+            </dt>
+            <dd class="col-sm-9 col-xl-10" id="LNbank-TransactionPaidAt">
+                @Model.Transaction.PaidAt?.ToBrowserDate()
+            </dd>
+        }
+        else
+        {
+            <dt class="col-sm-3 col-xl-2">
+                @Html.DisplayNameFor(model => model.Transaction.ExpiresAt)
+            </dt>
+            <dd class="col-sm-9 col-xl-10" id="LNbank-TransactionPaidAt">
+                @Model.Transaction.ExpiresAt.ToBrowserDate()
+            </dd>
+        }
+        @if (!string.IsNullOrEmpty(Model.Transaction.InvoiceId))
+        {
+            <dt class="col-sm-3 col-xl-2">
+                @Html.DisplayNameFor(model => model.Transaction.InvoiceId)
+            </dt>
+            <dd class="col-sm-9 col-xl-10 text-break">
+                <span class="text-truncate d-block" style="max-width:400px">@Model.Transaction.InvoiceId</span>
+            </dd>
+        }
+        <dt class="col-sm-3 col-xl-2">
+            @Html.DisplayNameFor(model => model.Transaction.PaymentRequest)
+        </dt>
+        <dd class="col-sm-9 col-xl-10 text-break">
+            <span class="text-truncate d-block" style="max-width:400px">@Model.Transaction.PaymentRequest</span>
+        </dd>
+        <dt class="col-sm-3 col-xl-2">
+            @Html.DisplayNameFor(model => model.Transaction.PaymentHash)
+        </dt>
+        <dd class="col-sm-9 col-xl-10">
+            @Model.Transaction.PaymentHash
+        </dd>
+        @if (!string.IsNullOrEmpty(Model.Transaction.Preimage))
+        {
+            <dt class="col-sm-3 col-xl-2">
+                @Html.DisplayNameFor(model => model.Transaction.Preimage)
+            </dt>
+            <dd class="col-sm-9 col-xl-10">
+                @Model.Transaction.Preimage
+            </dd>
+        }
+    </dl>
 </div>

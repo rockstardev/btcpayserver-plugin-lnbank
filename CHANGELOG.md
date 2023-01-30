@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Lookup invoices by either invoice ID or payment hash. (dennisreimann/btcpayserver-plugin-lnbank#22)
 
+### Added
+
+- Add invoice ID to transaction details view.
+
 ## [1.3.10]
 
 ### Added
