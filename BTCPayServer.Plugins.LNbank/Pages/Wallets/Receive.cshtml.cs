@@ -75,16 +75,16 @@ public class ReceiveModel : BasePageModel
         try
         {
             var amount = LightMoney.Satoshis(Amount).MilliSatoshi;
+            var memo = !string.IsNullOrEmpty(Description) ? Description : null;
             var expiry = Expiry is > 0 ? TimeSpan.FromMinutes(Expiry.Value) : WalletService.ExpiryDefault;
             var req = new CreateLightningInvoiceRequest
             {
                 Amount = amount,
                 Expiry = expiry,
-                Description = Description,
+                Description = AttachDescription && !string.IsNullOrEmpty(memo) ? memo : null,
                 PrivateRouteHints = PrivateRouteHints
             };
 
-            var memo = AttachDescription && !req.DescriptionHashOnly && !string.IsNullOrEmpty(req.Description) ? req.Description : null;
             var transaction = await WalletService.Receive(Wallet, req, memo);
             return RedirectToPage("/Transactions/Details", new { walletId, transaction.TransactionId });
         }
