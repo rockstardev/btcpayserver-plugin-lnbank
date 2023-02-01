@@ -46,6 +46,9 @@ public class Wallet
 
     public bool IsSoftDeleted { get; set; }
 
+    [DisplayName("Add routing hints for private channels by default")]
+    public bool PrivateRouteHintsByDefault { get; set; }
+
     internal static void OnModelCreating(ModelBuilder builder)
     {
         builder

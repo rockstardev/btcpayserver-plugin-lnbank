@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using BTCPayServer.Abstractions.Constants;
 using BTCPayServer.Data;
 using BTCPayServer.Plugins.LNbank.Authentication;
 using BTCPayServer.Plugins.LNbank.Data.Models;
@@ -25,6 +26,27 @@ public class DetailsModel : BasePageModel
         Wallet = await GetWallet(UserId, walletId);
         if (Wallet == null)
             return NotFound();
+
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostAsync(string walletId)
+    {
+        if (!ModelState.IsValid)
+        {
+            return Page();
+        }
+
+        Wallet = await GetWallet(UserId, walletId);
+        if (Wallet == null)
+            return NotFound();
+
+        if (await TryUpdateModelAsync(Wallet, "wallet", w => w.Name, w => w.PrivateRouteHintsByDefault))
+        {
+            await WalletRepository.AddOrUpdateWallet(Wallet);
+            TempData[WellKnownTempData.SuccessMessage] = "Wallet successfully updated.";
+            return RedirectToPage("./Details", new { walletId });
+        }
 
         return Page();
     }

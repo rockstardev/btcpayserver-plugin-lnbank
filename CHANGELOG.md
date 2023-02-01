@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.3.12]
 
+### Added
+
+- Wallet: Setting for adding route hints by default.
+
 ### Fixed
 
 - Make links compatible with `rootpath` setting. (If BTCPay is deployed in a subdirectory)

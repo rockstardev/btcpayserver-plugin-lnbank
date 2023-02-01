@@ -194,7 +194,7 @@ public class LndhubController : ControllerBase
                 Description = request.DescriptionHash != null ? request.DescriptionHash.ToString() : request.Memo,
                 DescriptionHashOnly = request.DescriptionHash != null,
                 Expiry = WalletService.ExpiryDefault,
-                PrivateRouteHints = true
+                PrivateRouteHints = Wallet.PrivateRouteHintsByDefault
             };
             var transaction = await _walletService.Receive(Wallet, req, request.Memo);
             var invoice = ToInvoiceData(transaction);

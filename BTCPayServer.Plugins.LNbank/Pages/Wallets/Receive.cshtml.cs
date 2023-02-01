@@ -61,6 +61,8 @@ public class ReceiveModel : BasePageModel
         if (Wallet == null)
             return NotFound();
 
+        PrivateRouteHints = Wallet.PrivateRouteHintsByDefault;
+
         return Page();
     }
 

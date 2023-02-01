@@ -38,7 +38,7 @@
         @await Component.InvokeAsync("Icon", new { symbol = "caret-down" })
         <span class="ms-1">Advanced settings</span>
     </button>
-    <div id="AdvancedSettings" class="collapse @(Model.PrivateRouteHints || Model.Expiry.HasValue ? "show" : "")">
+    <div id="AdvancedSettings" class="collapse @(Model.PrivateRouteHints != Model.Wallet.PrivateRouteHintsByDefault || Model.Expiry.HasValue ? "show" : "")">
         <div class="pt-3 pb-1">
             <div class="form-group">
                 <label asp-for="Expiry" class="form-label"></label>
@@ -51,8 +51,8 @@
                     <option value="10080">1 week</option>
                 </select>
             </div>
-            <div class="form-group d-flex align-items-center">
-                <input asp-for="PrivateRouteHints" type="checkbox" class="btcpay-toggle me-2"/>
+            <div class="form-group d-flex align-items-center gap-3">
+                <input asp-for="PrivateRouteHints" type="checkbox" class="btcpay-toggle"/>
                 <label asp-for="PrivateRouteHints" class="form-label mb-0"></label>
             </div>
         </div>
