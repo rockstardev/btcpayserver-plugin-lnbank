@@ -53,14 +53,12 @@ This command should return the connection details as well as a JSON response con
 
 If you have deployed BTCPay Server using the [manual deployment](https://docs.btcpayserver.org/Deployment/ManualDeploymentExtended/), you might encounter the "LNbank requires an internal Lightning node to be configured" message on the LNbank wallets overview page.
 
-In this case, make sure that you have configured the Lightning node you want to use as "internal node" using the `BTCPAY_BTCLIGHTNING` environment variable:
+In this case, make sure that you have configured the Lightning node you want to use as "internal node" using the `BTC.lightning` setting in your [btcpay.config](https://docs.btcpayserver.org/Deployment/ManualDeploymentExtended/#3-create-a-configuration-file) file:
 
-```bash
-# set your Lightning node connection string
-export BTCPAY_BTCLIGHTNING="type=lnd-rest;server=https://127.0.0.1:8080/;macaroonfilepath=/home/admin/.lnd/data/chain/bitcoin/mainnet/admin.macaroon"
-
-# run the setup to apply the new setting
-. ./btcpay-setup.sh -i
+```
+BTC.lightning=type=lnd-rest;server=https://127.0.0.1:8080/;macaroonfilepath=/home/admin/.lnd/data/chain/bitcoin/mainnet/admin.macaroon
 ```
 
 See the "Use custom node" view on the Lightning node connection setting screen in BTCPay Server for details on the connection string.
+
+You need to restart BTCPay Server for the settings update to take effect.
