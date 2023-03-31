@@ -113,7 +113,7 @@ public class LightningInvoiceWatcher : BackgroundService
         catch (GreenfieldAPIException apiException) when (apiException.APIError.Code == "invoice-not-found")
         {
             errorDetails = apiException.Message;
-            invalidate = InvalidateAfterRetries(transaction.PaymentHash, 5);
+            invalidate = InvalidateAfterRetries(transaction.PaymentHash, 12);
         }
         catch (Exception exception)
         {
@@ -162,7 +162,7 @@ public class LightningInvoiceWatcher : BackgroundService
         catch (GreenfieldAPIException apiException) when (apiException.APIError.Code == "payment-not-found")
         {
             errorDetails = apiException.Message;
-            invalidate = InvalidateAfterRetries(transaction.PaymentHash, 5);
+            invalidate = InvalidateAfterRetries(transaction.PaymentHash, 60);
         }
         catch (Exception exception)
         {
@@ -174,7 +174,7 @@ public class LightningInvoiceWatcher : BackgroundService
             bool isInflight = transaction.IsPending && transaction.CreatedAt > DateTimeOffset.Now - _inflightDelay;
             if (!isInflight)
             {
-                invalidate = InvalidateAfterRetries(transaction.PaymentHash, 3);
+                invalidate = InvalidateAfterRetries(transaction.PaymentHash, 12);
                 _logger.LogWarning(
                     "Unable to resolve payment (Payment Hash = {PaymentHash}) for transaction {TransactionId}{Details}",
                     transaction.PaymentHash, transaction.TransactionId,

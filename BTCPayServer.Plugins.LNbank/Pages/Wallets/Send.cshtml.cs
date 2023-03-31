@@ -131,7 +131,7 @@ public class SendModel : BasePageModel
 
         if (string.IsNullOrEmpty(PaymentRequest))
         {
-            // LNURL case with further interaction required 
+            // LNURL case with further interaction required
             try
             {
                 Destination = Destination.Trim();
@@ -181,7 +181,7 @@ public class SendModel : BasePageModel
         }
         catch (Exception exception)
         {
-            _logger.LogError("Payment failed: {Message}", exception.Message);
+            _logger.LogError(exception, "Payment failed: {Message}", exception.Message);
 
             TempData[WellKnownTempData.ErrorMessage] = $"Payment failed: {exception.Message}";
         }
