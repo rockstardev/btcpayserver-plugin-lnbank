@@ -4,6 +4,7 @@
 
 @{
     ViewData.SetActivePage(LNbankNavPages.Wallet, Model.Transaction.Description, Model.Wallet.WalletId);
+    var publicShareUrl = Url.PageLink("/Transactions/Share", null, new { transactionId = Model.Transaction.TransactionId });
 }
 
 <partial name="_WalletHeader" model="Model.Wallet"/>
@@ -46,14 +47,28 @@
 
         @if (!Model.Transaction.IsExpired && !Model.Transaction.IsCancelled)
         {
-            <div class="qrcode mt-4" data-clipboard-confirm-element="LNbank-QRText" data-clipboard="@Model.Transaction.PaymentRequest" id="LNbank-QRContainer">
-                @await Component.InvokeAsync("QRCode", new { data = Model.Transaction.PaymentRequest })
-            </div>
-            <div class="mt-2 mb-4">
-                <small id="LNbank-QRText" class="qrtext">Scan the QR code, or tap to copy the address.</small>
-            </div>
-            <div class="mt-4">
-                <button class="btn btn-secondary me-2 mb-2" type="button" data-clipboard="@Url.PageLink("/Transactions/Share", null, new { transactionId = Model.Transaction.TransactionId })" id="LNbank-CopyShareUrl">Copy public share URL</button>
+            <div class="payment-box my-4 mx-0">
+                <div class="qr-container" data-clipboard="@Model.Transaction.PaymentRequest" id="LNbank-QRContainer">
+                    @await Component.InvokeAsync("QRCode", new { data = Model.Transaction.PaymentRequest.ToUpperInvariant() })
+                </div>
+                <div class="input-group mt-3">
+                    <div class="form-floating">
+                        <input asp-for="Transaction.PaymentRequest" class="form-control-plaintext" readonly="readonly">
+                        <label asp-for="Transaction.PaymentRequest">Lightning</label>
+                    </div>
+                    <button type="button" class="btn btn-link" data-clipboard-target="#Transaction_PaymentRequest">
+                        @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                    </button>
+                </div>
+                <div class="input-group mt-3">
+                    <div class="form-floating">
+                        <input id="Transaction_ShareUrl" class="form-control-plaintext" readonly="readonly" value="@publicShareUrl">
+                        <label for="Transaction_ShareUrl">Public URL</label>
+                    </div>
+                    <button type="button" class="btn btn-link" data-clipboard-target="#Transaction_ShareUrl" id="LNbank-CopyShareUrl">
+                        @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                    </button>
+                </div>
             </div>
 
             <script>

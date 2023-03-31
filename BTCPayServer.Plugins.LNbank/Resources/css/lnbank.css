@@ -1,25 +1,4 @@
-﻿.qrcode {
-  display: inline-block;
-  max-width: 256px;
-}
-
-.qrcode img,
-.qrcode svg {
-  display: block;
-  width: 100%;
-  border-radius: var(--btcpay-border-radius);
-}
-
-.qrtext {
-  display: block;
-  color: var(--btcpay-light-text);
-}
-
-[data-clipboard] {
-  cursor: copy;
-}
-
-main header {
+﻿main header {
   display: flex;
   align-items: center;
   justify-content: space-between;

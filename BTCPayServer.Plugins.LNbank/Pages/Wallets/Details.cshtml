@@ -67,7 +67,6 @@
 @if (!string.IsNullOrEmpty(lndhubUrl))
 {
     <h3 class="mt-5 mb-3">Connect LNDhub-compatible wallet</h3>
-
     <p>
         With the QR code/account URL below, you can connect any wallet that is compatible with the LNDhub protocol.
         This is supported by <a href="https://bluewallet.io/" target="_blank" rel="noreferrer noopener">BlueWallet</a>,
@@ -77,16 +76,27 @@
     <p>These credentials allow unrestricted access to your LNbank wallet. Treat it as confidential information.</p>
 
     <div id="LNbank-LNDhubQR" class="collapse">
-        <div class="qrcode" data-clipboard-confirm-element="LNbank-QRText" data-clipboard="@lndhubUrl" id="LNbank-QRContainer">
-            @await Component.InvokeAsync("QRCode", new { data = lndhubUrl })
-        </div>
-        <div class="mt-2">
-            <small id="LNbank-QRText" class="qrtext">Scan the QR code, or tap to copy the address.</small>
+        <div class="payment-box mx-0">
+            <div class="qr-container" data-clipboard="@lndhubUrl" id="LNbank-QRContainer">
+                @await Component.InvokeAsync("QRCode", new { data = lndhubUrl })
+            </div>
+            <div class="input-group mt-3">
+                <div class="form-floating">
+                    <input id="LNbank-AccessUrl" class="form-control-plaintext" readonly="readonly" value="@lndhubUrl">
+                    <label for="LNbank-AccessUrl">Access URL</label>
+                </div>
+                <button type="button" class="btn btn-link" data-clipboard-target="#LNbank-AccessUrl">
+                    @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                </button>
+            </div>
         </div>
     </div>
 
-    <div class="mt-4 d-grid d-sm-flex gap-3">
-        <button class="btn btn-secondary" type="button" id="LNbank-ToggleLNDhubQR" data-bs-toggle="collapse" data-bs-target="#LNbank-LNDhubQR" aria-expanded="false" aria-controls="LNbank-LNDhubQR">Show QR code</button>
+    <div class="mt-4">
+        <button class="d-flex align-items-center gap-1 btn btn-link px-0" type="button" id="LNbank-ToggleLNDhubQR" data-bs-toggle="collapse" data-bs-target="#LNbank-LNDhubQR" aria-expanded="false" aria-controls="LNbank-LNDhubQR">
+            <span class="fw-semibold">Show QR code</span>
+            @await Component.InvokeAsync("Icon", new { symbol = "caret-down" })
+        </button>
     </div>
 }
 

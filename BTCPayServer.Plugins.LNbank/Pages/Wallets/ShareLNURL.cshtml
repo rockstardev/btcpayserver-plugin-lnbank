@@ -4,9 +4,9 @@
 
 @{
     Layout = "_LayoutSimple";
-    ViewData.SetActivePage(LNbankNavPages.Share, $"{Model.Wallet.Name} LNURL", Model.Wallet.WalletId);
+    ViewData.SetActivePage(LNbankNavPages.Share, Model.Wallet.Name, Model.Wallet.WalletId);
     var endpoint = new Uri($"{Request.Scheme}://{Request.Host}{Request.PathBase.ToUriComponent()}/api/v1/lnbank/lnurl/{Model.Wallet.WalletId}/pay");
-    var lnurl = LNURL.EncodeUri(endpoint, "payRequest", true);
+    var lnurl = LNURL.EncodeUri(endpoint, "payRequest", true).ToString().Replace("lightning:", "");
 }
 
 @section PageHeadContent {
@@ -29,12 +29,21 @@
     <div class="row justify-content-center mb-5">
         <div class="col text-center">
             <h2 id="LNbank-TransactionTitle">@ViewData["Title"]</h2>
-            <p class="mx-auto">Use <a href="@lnurl" rel="noreferrer noopener">this LNURL</a> to pay an invoice to this wallet.</p>
-            <div class="qrcode" data-clipboard-confirm-element="LNbank-QRText" data-clipboard="@lnurl.ToString().ToUpperInvariant()" id="LNbank-QRContainer">
-                @await Component.InvokeAsync("QRCode", new { data = lnurl.ToString().ToUpperInvariant() })
-            </div>
-            <div class="mt-2 mb-4">
-                <small id="LNbank-QRText" class="qrtext">Scan the QR code, or tap to copy the address.</small>
+            <div class="payment-box my-4">
+                <div class="qr-container" data-clipboard="@lnurl" id="LNbank-QRContainer">
+                    @await Component.InvokeAsync("QRCode", new { data = lnurl.ToUpperInvariant() })
+                </div>
+                <div class="input-group mt-3">
+                    <div class="form-floating">
+                        <input id="LNbank-LNURL" class="form-control-plaintext" readonly="readonly" value="@lnurl">
+                        <label for="LNbank-LNURL">LNURL</label>
+                    </div>
+                    <button type="button" class="btn btn-link" data-clipboard-target="#LNbank-LNURL">
+                        @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                    </button>
+                </div>
+                <a class="btn btn-primary rounded-pill w-100 mt-4" target="_top" id="LNbank-PayInWallet"
+                   href="lightning:@lnurl">Pay in wallet</a>
             </div>
         </div>
     </div>
