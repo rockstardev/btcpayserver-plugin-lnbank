@@ -47,23 +47,22 @@ public class LightningInvoiceWatcher : BackgroundService
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            using IServiceScope scope = _serviceScopeFactory.CreateScope();
-            WalletService walletService = scope.ServiceProvider.GetRequiredService<WalletService>();
+            using var scope = _serviceScopeFactory.CreateScope();
+            var walletService = scope.ServiceProvider.GetRequiredService<WalletService>();
 
-            IEnumerable<Transaction> transactions = await _walletRepository.GetPendingTransactions();
-            List<Transaction> list = transactions.ToList();
-            int count = list.Count;
+            var transactions = await _walletRepository.GetPendingTransactions();
+            var list = transactions.ToList();
+            var count = list.Count;
 
             if (count > 0)
             {
-                _logger.LogDebug("Processing {Count} transactions", count);
+                _logger.LogInformation("Processing {Count} transactions", count);
 
                 try
                 {
                     await Task.WhenAll(list.Select(transaction =>
                     {
-                        using CancellationTokenSource cts =
-                            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                         cts.CancelAfter(_checkInterval);
                         return CheckPendingTransaction(walletService, transaction, cts.Token);
                     }));
@@ -204,7 +203,7 @@ public class LightningInvoiceWatcher : BackgroundService
                 break;
             case LightningPaymentStatus.Unknown:
             case LightningPaymentStatus.Pending:
-                _logger.LogDebug("Transaction {TransactionId} status: {Status}",
+                _logger.LogInformation("Transaction {TransactionId} status: {Status}",
                     transaction.TransactionId, payment.Status.ToString());
                 break;
         }
