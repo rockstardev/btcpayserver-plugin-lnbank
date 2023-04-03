@@ -20,15 +20,22 @@ public class WalletRepository
 
     public async Task<IEnumerable<Wallet>> GetWallets(WalletsQuery query)
     {
-        await using LNbankPluginDbContext dbContext = _dbContextFactory.CreateContext();
-        List<Wallet> wallets = await FilterWallets(dbContext.Wallets.AsQueryable(), query).ToListAsync();
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var wallets = await FilterWallets(dbContext.Wallets.AsQueryable(), query).ToListAsync();
         return wallets.Select(wallet =>
         {
-            AccessKey key = wallet.AccessKeys.FirstOrDefault(ak => query.UserId.Contains(ak.UserId));
-            if (key != null)
-                wallet.AccessLevel = key.Level;
-            else if (query.UserId.Contains(wallet.UserId))
+            if (query.IsServerAdmin)
+            {
                 wallet.AccessLevel = AccessLevel.Admin;
+            }
+            else
+            {
+                var key = wallet.AccessKeys.FirstOrDefault(ak => query.UserId.Contains(ak.UserId));
+                if (key != null)
+                    wallet.AccessLevel = key.Level;
+                else if (query.UserId != null && query.UserId.Contains(wallet.UserId))
+                    wallet.AccessLevel = AccessLevel.Admin;
+            }
             return wallet;
         });
     }
@@ -39,6 +46,8 @@ public class WalletRepository
             queryable = queryable
                 .Include(w => w.AccessKeys).AsNoTracking()
                 .Where(w =>
+                    // Admin
+                    query.IsServerAdmin ||
                     // Owner
                     query.UserId.Contains(w.UserId) ||
                     // Access key holder
@@ -63,14 +72,18 @@ public class WalletRepository
 
     public async Task<Wallet> GetWallet(WalletsQuery query)
     {
-        await using LNbankPluginDbContext dbContext = _dbContextFactory.CreateContext();
-        Wallet wallet = await FilterWallets(dbContext.Wallets.AsQueryable(), query).FirstOrDefaultAsync();
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var wallet = await FilterWallets(dbContext.Wallets.AsQueryable(), query).FirstOrDefaultAsync();
         if (wallet == null)
             return null;
 
-        if (query.UserId != null)
+        if (query.IsServerAdmin)
         {
-            AccessKey key = wallet.AccessKeys.FirstOrDefault(ak => query.UserId.Contains(ak.UserId));
+            wallet.AccessLevel = AccessLevel.Admin;
+        }
+        else if (query.UserId != null)
+        {
+            var key = wallet.AccessKeys.FirstOrDefault(ak => query.UserId.Contains(ak.UserId));
             if (key != null)
                 wallet.AccessLevel = key.Level;
             else if (query.UserId.Contains(wallet.UserId))
@@ -78,7 +91,7 @@ public class WalletRepository
         }
         else if (query.AccessKey != null)
         {
-            AccessKey key = wallet.AccessKeys.FirstOrDefault(ak => query.AccessKey.Contains(ak.Key));
+            var key = wallet.AccessKeys.FirstOrDefault(ak => query.AccessKey.Contains(ak.Key));
             if (key != null)
                 wallet.AccessLevel = key.Level;
         }

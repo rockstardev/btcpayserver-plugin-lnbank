@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using BTCPayServer.Data;
 using BTCPayServer.Lightning;
 using Microsoft.EntityFrameworkCore;
 

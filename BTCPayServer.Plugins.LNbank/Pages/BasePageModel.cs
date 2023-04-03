@@ -28,11 +28,13 @@ public abstract class BasePageModel : PageModel
 
     protected async Task<Wallet> GetWallet(string userId, string walletId)
     {
+        var isServerAdmin = User.IsInRole(Roles.ServerAdmin);
         return await WalletRepository.GetWallet(new WalletsQuery
         {
             UserId = new[] { UserId },
             WalletId = new[] { walletId },
-            IncludeTransactions = true
+            IncludeTransactions = true,
+            IsServerAdmin = isServerAdmin
         });
     }
 }

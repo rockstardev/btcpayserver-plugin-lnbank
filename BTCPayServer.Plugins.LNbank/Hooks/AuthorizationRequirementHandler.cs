@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Contracts;
 using BTCPayServer.Data;
@@ -30,7 +29,9 @@ public class AuthorizationRequirementHandler : IPluginHookFilter
     {
         var obj = (AuthorizationFilterHandle)args;
         var httpContext = obj.HttpContext;
-        var userId = _userManager.GetUserId(obj.Context.User);
+        var user = obj.Context.User;
+        var userId = _userManager.GetUserId(user);
+        var isServerAdmin = user.IsInRole(Roles.ServerAdmin);
         Wallet wallet = null;
 
         var routeData = httpContext.GetRouteData();
@@ -39,22 +40,27 @@ public class AuthorizationRequirementHandler : IPluginHookFilter
             wallet = await _walletRepository.GetWallet(new WalletsQuery
             {
                 UserId = new[] { userId },
-                WalletId = new[] { walletId }
+                WalletId = new[] { walletId },
+                IsServerAdmin = isServerAdmin
             });
         }
 
         switch (obj.Requirement.Policy)
         {
+            case LNbankPolicies.CanManageLNbank:
+                if (isServerAdmin)
+                    obj.MarkSuccessful();
+                break;
             case LNbankPolicies.CanManageWallet:
-                if (wallet is { AccessLevel: AccessLevel.Admin })
+                if (isServerAdmin || wallet is { AccessLevel: AccessLevel.Admin })
                     obj.MarkSuccessful();
                 break;
             case LNbankPolicies.CanSendMoney:
-                if (wallet is { AccessLevel: AccessLevel.Admin } or { AccessLevel: AccessLevel.Send })
+                if (isServerAdmin || wallet is { AccessLevel: AccessLevel.Admin } or { AccessLevel: AccessLevel.Send })
                     obj.MarkSuccessful();
                 break;
             case LNbankPolicies.CanCreateInvoices:
-                if (wallet is { AccessLevel: AccessLevel.Admin } or { AccessLevel: AccessLevel.Send } or { AccessLevel: AccessLevel.Invoice })
+                if (isServerAdmin || wallet is { AccessLevel: AccessLevel.Admin } or { AccessLevel: AccessLevel.Send } or { AccessLevel: AccessLevel.Invoice })
                     obj.MarkSuccessful();
                 break;
             case LNbankPolicies.CanViewWallet:

@@ -1,0 +1,62 @@
+@page "/plugins/lnbank/admin"
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using BTCPayServer.Data
+@using BTCPayServer.Lightning
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@model BTCPayServer.Plugins.LNbank.Pages.Admin.IndexModel
+
+@{
+    ViewData.SetActivePage(LNbankNavPages.Admin, "LNbank Administration");
+}
+
+<div class="sticky-header-setup"></div>
+<div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+        <h2 class="my-1">@ViewData["Title"]</h2>
+        <div class="text-muted fw-semibold" id="LNbank-WalletBalance">
+            @Helpers.Sats(Model.TotalBalance) in wallets total
+        </div>
+    </div>
+</div>
+
+<partial name="_StatusMessage" />
+
+@if (Model.Wallets.Any())
+{
+    @foreach (var userId in Model.Wallets.Keys)
+    {
+        var user = await UserManager.FindByIdAsync(userId);
+        var userWallets = Model.Wallets[userId].ToList();
+        <h4 class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            @user.UserName
+            <span class="badge bg-light fs-6">
+                @Helpers.Sats(userWallets.Aggregate(LightMoney.Zero, (total, t) => total + t.Balance))
+            </span>
+        </h4>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 row-cols-xxl-4 g-3 mb-5">
+            @foreach (var wallet in userWallets)
+            {
+                <div class="col">
+                    <div class="card">
+                        <a asp-page="/Wallets/Wallet" asp-route-walletId="@wallet.WalletId" class="card-body text-decoration-none">
+                            <h5 class="card-title">@wallet.Name</h5>
+                            <div class="card-text d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                <span class="badge bg-light fs-6">
+                                    @Helpers.Sats(wallet.Balance)
+                                </span>
+                                <span class="text-muted">
+                                    @wallet.Transactions.Count transaction@(wallet.Transactions.Count == 1 ? "" : "s")
+                                </span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+else
+{
+    <p id="LNbank-Wallets" class="text-secondary">There are no wallets yet.</p>
+}

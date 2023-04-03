@@ -7,4 +7,7 @@ public class WalletsQuery
     public string[] AccessKey { get; set; }
     public bool IncludeTransactions { get; set; }
     public bool IncludeAccessKeys { get; set; }
+    public bool IncludeUser { get; set; }
+
+    public bool IsServerAdmin { get; set; }
 }

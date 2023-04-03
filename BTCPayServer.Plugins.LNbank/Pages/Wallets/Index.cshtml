@@ -1,4 +1,6 @@
 @page "/plugins/lnbank/wallets"
+@using BTCPayServer.Plugins.LNbank.Authentication
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.IndexModel
 
 @{
@@ -18,6 +20,9 @@
         <div class="d-flex gap-3">
             <a asp-page="./Create" class="btn btn-primary" id="LNbank-CreateWallet">
                 Create a wallet
+            </a>
+            <a asp-page="/Admin/Index" class="btn btn-secondary d-inline-flex align-items-center" id="LNbank-WalletSettings" permission="@LNbankPolicies.CanManageLNbank">
+                @await Component.InvokeAsync("Icon", new { symbol = "settings" })
             </a>
         </div>
     }
