@@ -155,6 +155,8 @@ public class Transaction
 
     private bool CanTerminate => IsUnpaid || IsPending;
 
+    public bool IsSoftDeleted { get; set; }
+
     internal static void OnModelCreating(ModelBuilder builder)
     {
         builder
@@ -199,5 +201,9 @@ public class Transaction
             .HasConversion(
                 v => v.MilliSatoshi,
                 v => new LightMoney(v));
+
+        builder
+            .Entity<Transaction>()
+            .HasQueryFilter(t => !t.IsSoftDeleted);
     }
 }

@@ -1,6 +1,10 @@
 @page "/plugins/lnbank/wallets/{walletId}"
 @using BTCPayServer.Lightning
+@using BTCPayServer.Plugins.LNbank.Authentication
 @using BTCPayServer.Plugins.LNbank.Data.Models
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using BTCPayServer.Abstractions.TagHelpers
+@using BTCPayServer.Abstractions.Models
 @inject BTCPayServer.Abstractions.Services.Safe Safe
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.WalletModel
 
@@ -37,6 +41,7 @@
                     <th>Description</th>
                     <th class="text-end">Amount</th>
                     <th class="text-end">Settled</th>
+                    <th class="text-end" permission="@LNbankPolicies.CanManageLNbank">Actions</th>
                 </tr>
                 </thead>
                 <tbody id="LNbank-WalletTransactions">
@@ -79,13 +84,18 @@
                                 </span>
                             }
                         </td>
+                        <td class="text-end" permission="@LNbankPolicies.CanManageLNbank">
+                            <a asp-page="/Transactions/Delete" asp-route-walletId="@Model.Wallet.WalletId" asp-route-transactionId="@transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-description="This will delete this transaction." data-confirm-input="DELETE" class="transaction-delete">
+                                Delete
+                            </a>
+                        </td>
                     </tr>
                 }
                 </tbody>
             </table>
         </div>
     </div>
-    
+
     @if (pendingTransactionIds.Any())
     {
         <script>
@@ -104,7 +114,7 @@
             })()
         </script>
     }
-    
+
     <a class="btn btn-secondary dropdown-toggle mt-4 ms-auto" href="#" role="button" id="ExportDropdownToggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         Export
     </a>
@@ -118,3 +128,4 @@ else
     <p id="LNbank-WalletTransactions" class="text-secondary">There are no transactions yet.</p>
 }
 
+<partial name="_Confirm" model="@(new ConfirmModel("Delete transaction", "This will delete this transaction. Are you sure?", "Delete"))" />

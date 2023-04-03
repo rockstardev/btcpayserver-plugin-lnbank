@@ -215,13 +215,19 @@ public class WalletRepository
 
     public async Task<Transaction> UpdateTransaction(Transaction transaction)
     {
-        await using LNbankPluginDbContext dbContext = _dbContextFactory.CreateContext();
-        EntityEntry<Transaction> entry = dbContext.Entry(transaction);
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var entry = dbContext.Entry(transaction);
         entry.State = EntityState.Modified;
 
         await dbContext.SaveChangesAsync();
 
         return entry.Entity;
+    }
+
+    public async Task RemoveTransaction(Transaction transaction)
+    {
+        transaction.IsSoftDeleted = true;
+        await UpdateTransaction(transaction);
     }
 
     public async Task<IEnumerable<Transaction>> GetTransactions(TransactionsQuery query)

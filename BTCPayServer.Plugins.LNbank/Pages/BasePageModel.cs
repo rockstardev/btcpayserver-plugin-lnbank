@@ -14,6 +14,8 @@ public abstract class BasePageModel : PageModel
     protected readonly WalletRepository WalletRepository;
     protected readonly WalletService WalletService;
 
+    public Wallet CurrentWallet => HttpContext.Items.TryGetValue("BTCPAY.LNBANK.WALLET", out var wallet) ? (Wallet)wallet : null;
+
     protected BasePageModel(
         UserManager<ApplicationUser> userManager,
         WalletRepository walletRepository,

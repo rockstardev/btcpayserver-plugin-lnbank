@@ -1,5 +1,9 @@
 @page "/plugins/lnbank/wallets/{walletId}/transactions/details/{transactionId}"
 @inject BTCPayServer.Abstractions.Services.Safe Safe
+@using BTCPayServer.Plugins.LNbank.Authentication
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@using BTCPayServer.Abstractions.TagHelpers
+@using BTCPayServer.Abstractions.Models
 @model BTCPayServer.Plugins.LNbank.Pages.Transactions.DetailsModel
 
 @{
@@ -9,142 +13,150 @@
 
 <partial name="_WalletHeader" model="Model.Wallet"/>
 
-<div class="mb-4">
-    <h2 id="LNbank-TransactionTitle">@ViewData["Title"]</h2>
-    @if (Model.Transaction.IsPaid || Model.Transaction.IsSettled)
-    {
-        <h3 id="LNbank-TransactionSettled" class="text-@(Model.Transaction.AmountSettled > 0 ? "success" : "danger")">
-            @Helpers.Sats(Model.Transaction.AmountSettled)
-            @Model.Transaction.Status
-        </h3>
-        <h4 class="h4 text-muted">
-            @if (Model.Transaction.IsSettled)
-            {
-                <span>
-                    Paid
-                    @Model.Transaction.PaidAt?.ToBrowserDate(ViewsRazor.DateDisplayFormat.Relative)
-                </span>
-            }
-            else
-            {
-                <span>Awaiting confirmation</span>
-            }
-        </h4>
-    }
-    else
-    {
-        <h3 id="LNbank-TransactionAmount" class="text-@Helpers.TransactionStateClass(Model.Transaction)">
-            @Helpers.Sats(Model.Transaction.Amount)
-            @Model.Transaction.Status
-        </h3>
-        @if (!Model.Transaction.IsCancelled)
+<h2 id="LNbank-TransactionTitle">@ViewData["Title"]</h2>
+@if (Model.Transaction.IsPaid || Model.Transaction.IsSettled)
+{
+    <h3 id="LNbank-TransactionSettled" class="text-@(Model.Transaction.AmountSettled > 0 ? "success" : "danger")">
+        @Helpers.Sats(Model.Transaction.AmountSettled)
+        @Model.Transaction.Status
+    </h3>
+    <h4 class="h4 text-muted">
+        @if (Model.Transaction.IsSettled)
         {
-            <h4 class="h4 text-muted">
-                @(Model.Transaction.IsExpired ? "Expired" : "Expires")
-                @Model.Transaction.ExpiresAt.ToBrowserDate(ViewsRazor.DateDisplayFormat.Relative)
-            </h4>
-        }
-
-        @if (!Model.Transaction.IsExpired && !Model.Transaction.IsCancelled)
-        {
-            <div class="payment-box my-4 mx-0">
-                <div class="qr-container" data-clipboard="@Model.Transaction.PaymentRequest" id="LNbank-QRContainer">
-                    @await Component.InvokeAsync("QRCode", new { data = Model.Transaction.PaymentRequest.ToUpperInvariant() })
-                </div>
-                <div class="input-group mt-3">
-                    <div class="form-floating">
-                        <input asp-for="Transaction.PaymentRequest" class="form-control-plaintext" readonly="readonly">
-                        <label asp-for="Transaction.PaymentRequest">Lightning</label>
-                    </div>
-                    <button type="button" class="btn btn-link" data-clipboard-target="#Transaction_PaymentRequest">
-                        @await Component.InvokeAsync("Icon", new { symbol = "copy" })
-                    </button>
-                </div>
-                <div class="input-group mt-3">
-                    <div class="form-floating">
-                        <input id="Transaction_ShareUrl" class="form-control-plaintext" readonly="readonly" value="@publicShareUrl">
-                        <label for="Transaction_ShareUrl">Public URL</label>
-                    </div>
-                    <button type="button" class="btn btn-link" data-clipboard-target="#Transaction_ShareUrl" id="LNbank-CopyShareUrl">
-                        @await Component.InvokeAsync("Icon", new { symbol = "copy" })
-                    </button>
-                </div>
-            </div>
-
-            <script>
-                (function () {
-                    window.LNbank.hubs.push({
-                        id: 'transaction',
-                        handlers: {
-                            'transaction-update': data => {
-                                if (data.transactionId === @Safe.Json(Model.Transaction.TransactionId)) {
-                                    window.location.reload();
-                                }
-                            }
-                        }
-                    })
-                })()
-            </script>
-        }
-    }
-    <dl class="row" id="LNbank-TransactionDetails">
-        <dt class="col-sm-3 col-xl-2">
-            @Html.DisplayNameFor(model => model.Transaction.Description)
-        </dt>
-        <dd class="col-sm-9 col-xl-10 d-inline-flex align-items-center gap-2">
-            @if (!string.IsNullOrEmpty(Model.Transaction.Description))
-            {
-                <span id="LNbank-TransactionDescription">@Model.Transaction.Description</span>
-            }
-            <a asp-page="./Edit" asp-route-walletId="@Model.Wallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId">Edit</a>
-        </dd>
-        @if (Model.Transaction.IsPaid || Model.Transaction.IsSettled)
-        {
-            <dt class="col-sm-3 col-xl-2">
-                @Html.DisplayNameFor(model => model.Transaction.PaidAt)
-            </dt>
-            <dd class="col-sm-9 col-xl-10" id="LNbank-TransactionPaidAt">
-                @Model.Transaction.PaidAt?.ToBrowserDate()
-            </dd>
+            <span>
+                Paid
+                @Model.Transaction.PaidAt?.ToBrowserDate(ViewsRazor.DateDisplayFormat.Relative)
+            </span>
         }
         else
         {
-            <dt class="col-sm-3 col-xl-2">
-                @Html.DisplayNameFor(model => model.Transaction.ExpiresAt)
-            </dt>
-            <dd class="col-sm-9 col-xl-10" id="LNbank-TransactionPaidAt">
-                @Model.Transaction.ExpiresAt.ToBrowserDate()
-            </dd>
+            <span>Awaiting confirmation</span>
         }
-        @if (!string.IsNullOrEmpty(Model.Transaction.InvoiceId))
+    </h4>
+}
+else
+{
+    <h3 id="LNbank-TransactionAmount" class="text-@Helpers.TransactionStateClass(Model.Transaction)">
+        @Helpers.Sats(Model.Transaction.Amount)
+        @Model.Transaction.Status
+    </h3>
+    @if (!Model.Transaction.IsCancelled)
+    {
+        <h4 class="h4 text-muted">
+            @(Model.Transaction.IsExpired ? "Expired" : "Expires")
+            @Model.Transaction.ExpiresAt.ToBrowserDate(ViewsRazor.DateDisplayFormat.Relative)
+        </h4>
+    }
+
+    @if (!Model.Transaction.IsExpired && !Model.Transaction.IsCancelled)
+    {
+        <div class="payment-box my-4 mx-0">
+            <div class="qr-container" data-clipboard="@Model.Transaction.PaymentRequest" id="LNbank-QRContainer">
+                @await Component.InvokeAsync("QRCode", new { data = Model.Transaction.PaymentRequest.ToUpperInvariant() })
+            </div>
+            <div class="input-group mt-3">
+                <div class="form-floating">
+                    <input asp-for="Transaction.PaymentRequest" class="form-control-plaintext" readonly="readonly">
+                    <label asp-for="Transaction.PaymentRequest">Lightning</label>
+                </div>
+                <button type="button" class="btn btn-link" data-clipboard-target="#Transaction_PaymentRequest">
+                    @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                </button>
+            </div>
+            <div class="input-group mt-3">
+                <div class="form-floating">
+                    <input id="Transaction_ShareUrl" class="form-control-plaintext" readonly="readonly" value="@publicShareUrl">
+                    <label for="Transaction_ShareUrl">Public URL</label>
+                </div>
+                <button type="button" class="btn btn-link" data-clipboard-target="#Transaction_ShareUrl" id="LNbank-CopyShareUrl">
+                    @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                </button>
+            </div>
+        </div>
+
+        <script>
+            (function () {
+                window.LNbank.hubs.push({
+                    id: 'transaction',
+                    handlers: {
+                        'transaction-update': data => {
+                            if (data.transactionId === @Safe.Json(Model.Transaction.TransactionId)) {
+                                window.location.reload();
+                            }
+                        }
+                    }
+                })
+            })()
+        </script>
+    }
+}
+<dl class="row" id="LNbank-TransactionDetails">
+    <dt class="col-sm-3 col-xl-2">
+        @Html.DisplayNameFor(model => model.Transaction.Description)
+    </dt>
+    <dd class="col-sm-9 col-xl-10 d-inline-flex align-items-center gap-2">
+        @if (!string.IsNullOrEmpty(Model.Transaction.Description))
         {
-            <dt class="col-sm-3 col-xl-2">
-                @Html.DisplayNameFor(model => model.Transaction.InvoiceId)
-            </dt>
-            <dd class="col-sm-9 col-xl-10 text-break">
-                <span class="text-truncate d-block" style="max-width:400px">@Model.Transaction.InvoiceId</span>
-            </dd>
+            <span id="LNbank-TransactionDescription">@Model.Transaction.Description</span>
         }
+        <a asp-page="./Edit" asp-route-walletId="@Model.Wallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId">Edit</a>
+    </dd>
+    @if (Model.Transaction.IsPaid || Model.Transaction.IsSettled)
+    {
         <dt class="col-sm-3 col-xl-2">
-            @Html.DisplayNameFor(model => model.Transaction.PaymentRequest)
+            @Html.DisplayNameFor(model => model.Transaction.PaidAt)
+        </dt>
+        <dd class="col-sm-9 col-xl-10" id="LNbank-TransactionPaidAt">
+            @Model.Transaction.PaidAt?.ToBrowserDate()
+        </dd>
+    }
+    else
+    {
+        <dt class="col-sm-3 col-xl-2">
+            @Html.DisplayNameFor(model => model.Transaction.ExpiresAt)
+        </dt>
+        <dd class="col-sm-9 col-xl-10" id="LNbank-TransactionPaidAt">
+            @Model.Transaction.ExpiresAt.ToBrowserDate()
+        </dd>
+    }
+    @if (!string.IsNullOrEmpty(Model.Transaction.InvoiceId))
+    {
+        <dt class="col-sm-3 col-xl-2">
+            @Html.DisplayNameFor(model => model.Transaction.InvoiceId)
         </dt>
         <dd class="col-sm-9 col-xl-10 text-break">
-            <span class="text-truncate d-block" style="max-width:400px">@Model.Transaction.PaymentRequest</span>
+            <span class="text-truncate d-block" style="max-width:400px">@Model.Transaction.InvoiceId</span>
         </dd>
+    }
+    <dt class="col-sm-3 col-xl-2">
+        @Html.DisplayNameFor(model => model.Transaction.PaymentRequest)
+    </dt>
+    <dd class="col-sm-9 col-xl-10 text-break">
+        <span class="text-truncate d-block" style="max-width:400px">@Model.Transaction.PaymentRequest</span>
+    </dd>
+    <dt class="col-sm-3 col-xl-2">
+        @Html.DisplayNameFor(model => model.Transaction.PaymentHash)
+    </dt>
+    <dd class="col-sm-9 col-xl-10">
+        @Model.Transaction.PaymentHash
+    </dd>
+    @if (!string.IsNullOrEmpty(Model.Transaction.Preimage))
+    {
         <dt class="col-sm-3 col-xl-2">
-            @Html.DisplayNameFor(model => model.Transaction.PaymentHash)
+            @Html.DisplayNameFor(model => model.Transaction.Preimage)
         </dt>
         <dd class="col-sm-9 col-xl-10">
-            @Model.Transaction.PaymentHash
+            @Model.Transaction.Preimage
         </dd>
-        @if (!string.IsNullOrEmpty(Model.Transaction.Preimage))
-        {
-            <dt class="col-sm-3 col-xl-2">
-                @Html.DisplayNameFor(model => model.Transaction.Preimage)
-            </dt>
-            <dd class="col-sm-9 col-xl-10">
-                @Model.Transaction.Preimage
-            </dd>
-        }
-    </dl>
+    }
+</dl>
+
+<div permission="@LNbankPolicies.CanManageLNbank">
+    <h3 class="mt-5 mb-4">Other options</h3>
+
+    <a asp-page="./Delete" asp-route-walletId="@Model.Wallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-description="This will delete this transaction." data-confirm-input="DELETE" class="btn btn-sm btn-outline-danger">
+        Delete Transaction
+    </a>
 </div>
+
+<partial name="_Confirm" model="@(new ConfirmModel("Delete transaction", "This will delete this transaction. Are you sure?", "Delete"))" />

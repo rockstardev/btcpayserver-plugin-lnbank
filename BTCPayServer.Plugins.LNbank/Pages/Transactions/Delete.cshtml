@@ -1,0 +1,14 @@
+@page "/plugins/lnbank/wallets/{walletId}/transactions/delete/{transactionId}"
+@model BTCPayServer.Plugins.LNbank.Pages.Transactions.DeleteModel
+
+@{
+    ViewData.SetActivePage(LNbankNavPages.Wallet, $"Delete transaction \"{Model.Transaction.TransactionId}\"", Model.CurrentWallet.WalletId);
+}
+
+<partial name="_WalletHeader" model="Model.CurrentWallet"/>
+
+<p>Are you sure you want to delete this transaction?</p>
+
+<form method="post">
+    <input type="submit" value="Delete" class="btn btn-danger" id="LNbank-Delete" />
+</form>
