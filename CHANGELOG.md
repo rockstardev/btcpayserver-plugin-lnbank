@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0]
+
+### Added
+
+- Admin overview: See how many wallets there are and what balances they have. (#16)
+
+### Changed
+
+- Open LNURL share page in separate tab. (#27)
+- Update QR boxes.
+- Improve logging and increase retries before invalidation
+
 ## [1.3.12]
 
 ### Added
@@ -19,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Lookup invoices by either invoice ID or payment hash. (dennisreimann/btcpayserver-plugin-lnbank#22)
+- Lookup invoices by either invoice ID or payment hash. (#22)
 - Fix attaching the description.
 
 ### Added
@@ -63,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Allow invalidating pending invoices. (dennisreimann/btcpayserver-plugin-lnbank#23)
+- Allow invalidating pending invoices. (#23)
 
 ## [1.3.6] - 2022-12-15
 
