@@ -56,19 +56,19 @@ else
             </div>
             <div class="input-group mt-3">
                 <div class="form-floating">
-                    <input asp-for="Transaction.PaymentRequest" class="form-control-plaintext" readonly="readonly">
-                    <label asp-for="Transaction.PaymentRequest">Lightning</label>
+                    <input id="LNbank-Transaction_PaymentRequest" asp-for="Transaction.PaymentRequest" class="form-control-plaintext" readonly="readonly">
+                    <label for="LNbank-Transaction_PaymentRequest" asp-for="Transaction.PaymentRequest">Lightning</label>
                 </div>
-                <button type="button" class="btn btn-link" data-clipboard-target="#Transaction_PaymentRequest">
+                <button type="button" class="btn btn-link" data-clipboard-target="#LNbank-Transaction_PaymentRequest">
                     @await Component.InvokeAsync("Icon", new { symbol = "copy" })
                 </button>
             </div>
             <div class="input-group mt-3">
                 <div class="form-floating">
-                    <input id="Transaction_ShareUrl" class="form-control-plaintext" readonly="readonly" value="@publicShareUrl">
-                    <label for="Transaction_ShareUrl">Public URL</label>
+                    <input id="LNbank-Transaction_ShareUrl" class="form-control-plaintext" readonly="readonly" value="@publicShareUrl">
+                    <label for="LNbank-Transaction_ShareUrl">Public URL</label>
                 </div>
-                <button type="button" class="btn btn-link" data-clipboard-target="#Transaction_ShareUrl" id="LNbank-CopyShareUrl">
+                <button type="button" class="btn btn-link" data-clipboard-target="#LNbank-Transaction_ShareUrl" id="LNbank-CopyShareUrl">
                     @await Component.InvokeAsync("Icon", new { symbol = "copy" })
                 </button>
             </div>
