@@ -371,6 +371,25 @@ public class WalletService
         return result;
     }
 
+    public async Task<bool> Revalidate(Transaction transaction)
+    {
+        string? status = transaction.Status;
+        bool result = transaction.QueueForRevalidation();
+        if (result)
+        {
+            await _walletRepository.UpdateTransaction(transaction);
+            await BroadcastTransactionUpdate(transaction, Transaction.StatusRevalidating);
+        }
+
+        _logger.LogInformation(
+            // ReSharper disable once TemplateIsNotCompileTimeConstantProblem
+            (result ? "Revalidating transaction {TransactionId}" : "Revalidating transaction {TransactionId} failed") +
+            " (previous state: {Status})",
+            transaction.TransactionId, status);
+
+        return result;
+    }
+
     public async Task<bool> Settle(Transaction transaction, LightMoney amount, LightMoney amountSettled,
         LightMoney routingFee, DateTimeOffset date, string preimage)
     {

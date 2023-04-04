@@ -1,0 +1,14 @@
+@page "/plugins/lnbank/wallets/{walletId}/transactions/revalidate/{transactionId}"
+@model BTCPayServer.Plugins.LNbank.Pages.Transactions.RevalidateModel
+
+@{
+    ViewData.SetActivePage(LNbankNavPages.Wallet, $"Revalidate transaction \"{Model.Transaction.TransactionId}\"", Model.CurrentWallet.WalletId);
+}
+
+<partial name="_WalletHeader" model="Model.CurrentWallet"/>
+
+<p>Are you sure you want to revalidate this transaction?</p>
+
+<form method="post">
+    <input type="submit" value="Revalidate" class="btn btn-danger" id="LNbank-Revalidate" />
+</form>

@@ -18,4 +18,5 @@ public class TransactionsQuery
     public bool IncludeWallet { get; set; }
     public bool IncludingCancelled { get; set; }
     public bool IncludingInvalid { get; set; }
+    public bool IncludingRevalidating { get; set; }
 }

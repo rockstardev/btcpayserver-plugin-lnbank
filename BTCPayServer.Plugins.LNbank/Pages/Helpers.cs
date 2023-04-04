@@ -21,6 +21,6 @@ public static class Helpers
         if (transaction.IsPaid || transaction.IsSettled)
             return transaction.AmountSettled > 0 ? "success" : "danger";
 
-        return transaction.IsExpired || transaction.IsCancelled ? "info" : "warning";
+        return transaction.IsExpired || transaction.IsCancelled || transaction.IsInvalid ? "info" : "warning";
     }
 }

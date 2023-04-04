@@ -10,13 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Admin overview: See how many wallets there are and what balances they have. (#16)
+- Admin can run revalidation for transactions marked as expired, cancelled or invalid.
 - Admin can delete transactions.
 
 ### Changed
 
 - Open LNURL share page in separate tab. (#27)
 - Update QR boxes.
-- Improve logging and increase retries before invalidation
+- Improve logging and increase retries before invalidation.
 
 ## [1.3.12]
 

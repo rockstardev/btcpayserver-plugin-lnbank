@@ -165,6 +165,7 @@ public class WalletRepository
         return await GetTransactions(new TransactionsQuery
         {
             IncludingPending = true,
+            IncludingRevalidating = true,
             IncludingExpired = false,
             IncludingInvalid = false,
             IncludingCancelled = false,
@@ -252,6 +253,9 @@ public class WalletRepository
 
         if (!query.IncludingPending)
             queryable = queryable.Where(t => t.PaidAt != null);
+
+        if (!query.IncludingRevalidating)
+            queryable = queryable.Where(t => t.ExplicitStatus != Transaction.StatusRevalidating);
 
         if (!query.IncludingCancelled)
             queryable = queryable.Where(t => t.ExplicitStatus != Transaction.StatusCancelled);

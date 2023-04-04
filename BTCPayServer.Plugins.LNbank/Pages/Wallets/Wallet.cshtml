@@ -10,7 +10,7 @@
 
 @{
     ViewData.SetActivePage(LNbankNavPages.Wallet, Model.CurrentWallet.Name, Model.CurrentWallet.WalletId);
-    var pendingTransactionIds = Model.Transactions.Where(t => t.IsPending).Select(t => t.TransactionId);
+    var pendingTransactionIds = Model.Transactions.Where(t => t.IsPending || t.IsRevalidating).Select(t => t.TransactionId);
 }
 
 @functions
@@ -55,7 +55,10 @@
                         </td>
                         <td>
                             <div class="d-inline-flex align-items-center gap-2">
-                                <span class="transaction-description text-break">@transaction.Description</span>
+                                @if (!string.IsNullOrEmpty(transaction.Description))
+                                {
+                                    <span class="transaction-description text-break">@transaction.Description</span>
+                                }
                                 <a asp-page="/Transactions/Edit" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@transaction.TransactionId" class="transaction-edit">
                                     Edit
                                 </a>
@@ -85,7 +88,14 @@
                             }
                         </td>
                         <td class="text-end" permission="@LNbankPolicies.CanManageLNbank">
-                            <a asp-page="/Transactions/Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-description="This will delete this transaction." data-confirm-input="DELETE" class="transaction-delete">
+                            @if (transaction.CanRevalidate)
+                            {
+                                <a asp-page="/Transactions/Revalidate" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-title="Revalidate transaction" data-description="This will revalidate this transaction." data-confirm="Revalidate" data-confirm-input="REVALIDATE" class="transaction-revalidate text-info">
+                                    Revalidate
+                                </a>
+                                <span>-</span>
+                            }
+                            <a asp-page="/Transactions/Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-title="Delete transaction" data-description="This will delete this transaction." data-confirm="Delete" data-confirm-input="DELETE" class="transaction-delete text-danger">
                                 Delete
                             </a>
                         </td>

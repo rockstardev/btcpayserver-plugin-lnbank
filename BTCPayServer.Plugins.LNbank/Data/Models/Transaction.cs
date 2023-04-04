@@ -47,6 +47,7 @@ public class Transaction
     public const string StatusPending = "pending";
     public const string StatusCancelled = "cancelled";
     public const string StatusInvalid = "invalid";
+    public const string StatusRevalidating = "revalidating";
 
     public string Status
     {
@@ -75,6 +76,7 @@ public class Transaction
             StatusSettled => LightningInvoiceStatus.Paid,
             StatusPaid => LightningInvoiceStatus.Paid,
             StatusUnpaid => LightningInvoiceStatus.Unpaid,
+            StatusRevalidating => LightningInvoiceStatus.Unpaid,
             StatusPending => LightningInvoiceStatus.Unpaid,
             StatusExpired => LightningInvoiceStatus.Expired,
             StatusInvalid => LightningInvoiceStatus.Expired,
@@ -89,6 +91,7 @@ public class Transaction
         {
             StatusSettled => LightningPaymentStatus.Complete,
             StatusPaid => LightningPaymentStatus.Complete,
+            StatusRevalidating => LightningPaymentStatus.Pending,
             StatusUnpaid => LightningPaymentStatus.Pending,
             StatusPending => LightningPaymentStatus.Pending,
             StatusExpired => LightningPaymentStatus.Failed,
@@ -105,6 +108,7 @@ public class Transaction
     public bool IsPending => Status == StatusPending;
     public bool IsCancelled => Status == StatusCancelled;
     public bool IsInvalid => Status == StatusInvalid;
+    public bool IsRevalidating => Status == StatusRevalidating;
 
     public DateTimeOffset Date => PaidAt ?? CreatedAt;
 
@@ -127,6 +131,17 @@ public class Transaction
         RoutingFee = null;
         PaidAt = null;
         ExplicitStatus = StatusInvalid;
+        return true;
+    }
+
+    public bool QueueForRevalidation()
+    {
+        if (!CanRevalidate)
+            return false;
+        AmountSettled = null;
+        RoutingFee = null;
+        PaidAt = null;
+        ExplicitStatus = StatusRevalidating;
         return true;
     }
 
@@ -154,6 +169,7 @@ public class Transaction
     public bool HasRoutingFee => RoutingFee != null && RoutingFee > 0;
 
     private bool CanTerminate => IsUnpaid || IsPending;
+    public bool CanRevalidate => IsInvalid || IsExpired || IsCancelled;
 
     public bool IsSoftDeleted { get; set; }
 
