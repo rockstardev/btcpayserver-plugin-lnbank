@@ -23,8 +23,6 @@ public class ReceiveModel : BasePageModel
 {
     private readonly ILogger _logger;
 
-    public Wallet Wallet { get; set; }
-
     [BindProperty]
     public string Description { get; set; }
 
@@ -55,21 +53,19 @@ public class ReceiveModel : BasePageModel
         _logger = logger;
     }
 
-    public async Task<IActionResult> OnGet(string walletId)
+    public IActionResult OnGet(string walletId)
     {
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
+        if (CurrentWallet == null)
             return NotFound();
 
-        PrivateRouteHints = Wallet.PrivateRouteHintsByDefault;
+        PrivateRouteHints = CurrentWallet.PrivateRouteHintsByDefault;
 
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync(string walletId)
     {
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
+        if (CurrentWallet == null)
             return NotFound();
         if (!ModelState.IsValid)
             return Page();
@@ -87,7 +83,7 @@ public class ReceiveModel : BasePageModel
                 PrivateRouteHints = PrivateRouteHints
             };
 
-            var transaction = await WalletService.Receive(Wallet, req, memo);
+            var transaction = await WalletService.Receive(CurrentWallet, req, memo);
             return RedirectToPage("/Transactions/Details", new { walletId, transaction.TransactionId });
         }
         catch (Exception exception)

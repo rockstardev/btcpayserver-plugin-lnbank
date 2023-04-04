@@ -9,7 +9,7 @@
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.WalletModel
 
 @{
-    ViewData.SetActivePage(LNbankNavPages.Wallet, Model.Wallet.Name, Model.Wallet.WalletId);
+    ViewData.SetActivePage(LNbankNavPages.Wallet, Model.CurrentWallet.Name, Model.CurrentWallet.WalletId);
     var pendingTransactionIds = Model.Transactions.Where(t => t.IsPending).Select(t => t.TransactionId);
 }
 
@@ -23,7 +23,7 @@
     }
 }
 
-<partial name="_WalletHeader" model="Model.Wallet"/>
+<partial name="_WalletHeader" model="Model.CurrentWallet"/>
 
 @if (Model.Transactions.Any())
 {
@@ -49,14 +49,14 @@
                 {
                     <tr id="LNbank-Transaction-@transaction.TransactionId">
                         <td>
-                            <a asp-page="/Transactions/Details" asp-route-walletId="@Model.Wallet.WalletId" asp-route-transactionId="@transaction.TransactionId" class="transaction-details">
+                            <a asp-page="/Transactions/Details" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@transaction.TransactionId" class="transaction-details">
                                 @transaction.CreatedAt.ToBrowserDate(ViewsRazor.DateDisplayFormat.Relative)
                             </a>
                         </td>
                         <td>
                             <div class="d-inline-flex align-items-center gap-2">
                                 <span class="transaction-description text-break">@transaction.Description</span>
-                                <a asp-page="/Transactions/Edit" asp-route-walletId="@Model.Wallet.WalletId" asp-route-transactionId="@transaction.TransactionId" class="transaction-edit">
+                                <a asp-page="/Transactions/Edit" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@transaction.TransactionId" class="transaction-edit">
                                     Edit
                                 </a>
                             </div>
@@ -85,7 +85,7 @@
                             }
                         </td>
                         <td class="text-end" permission="@LNbankPolicies.CanManageLNbank">
-                            <a asp-page="/Transactions/Delete" asp-route-walletId="@Model.Wallet.WalletId" asp-route-transactionId="@transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-description="This will delete this transaction." data-confirm-input="DELETE" class="transaction-delete">
+                            <a asp-page="/Transactions/Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-description="This will delete this transaction." data-confirm-input="DELETE" class="transaction-delete">
                                 Delete
                             </a>
                         </td>
@@ -119,8 +119,8 @@
         Export
     </a>
     <div class="dropdown-menu" aria-labelledby="ExportDropdownToggle">
-        <a asp-controller="Export" asp-action="Export" asp-route-walletId="@Model.Wallet.WalletId" asp-route-format="csv" class="dropdown-item export-link" target="_blank">CSV</a>
-        <a asp-controller="Export" asp-action="Export" asp-route-walletId="@Model.Wallet.WalletId" asp-route-format="json" class="dropdown-item export-link" target="_blank">JSON</a>
+        <a asp-controller="Export" asp-action="Export" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-format="csv" class="dropdown-item export-link" target="_blank">CSV</a>
+        <a asp-controller="Export" asp-action="Export" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-format="json" class="dropdown-item export-link" target="_blank">JSON</a>
     </div>
 }
 else

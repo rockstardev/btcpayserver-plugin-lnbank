@@ -8,10 +8,12 @@ using System.Net.Mime;
 using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Constants;
 using BTCPayServer.Client;
+using BTCPayServer.Data;
 using BTCPayServer.Lightning;
 using BTCPayServer.Plugins.LNbank.Data.Models;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -21,9 +23,11 @@ namespace BTCPayServer.Plugins.LNbank.Controllers;
 public class ExportController : Controller
 {
     private readonly WalletRepository _walletRepository;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public ExportController(WalletRepository walletRepository)
+    public ExportController(UserManager<ApplicationUser> userManager, WalletRepository walletRepository)
     {
+        _userManager = userManager;
         _walletRepository = walletRepository;
     }
 
@@ -31,7 +35,13 @@ public class ExportController : Controller
     [Authorize(AuthenticationSchemes = AuthenticationSchemes.Cookie, Policy = Policies.CanViewInvoices)]
     public async Task<IActionResult> Export(string walletId, string format)
     {
-        var wallet = await _walletRepository.GetWallet(new WalletsQuery { WalletId = new[] { walletId }, IncludeTransactions = true });
+        var wallet = await _walletRepository.GetWallet(new WalletsQuery
+        {
+            UserId = new [] { GetUserId() },
+            WalletId = new[] { walletId },
+            IncludeTransactions = true,
+            IsServerAdmin = User.IsInRole(Roles.ServerAdmin)
+        });
         if (wallet == null)
         {
             return NotFound();
@@ -104,4 +114,6 @@ public class ExportController : Controller
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? PaidAt { get; set; }
     }
+
+    private string GetUserId() => _userManager.GetUserId(User);
 }

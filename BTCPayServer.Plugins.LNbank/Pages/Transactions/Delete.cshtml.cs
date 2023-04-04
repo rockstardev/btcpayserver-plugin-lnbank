@@ -25,6 +25,9 @@ public class DeleteModel : BasePageModel
 
     public IActionResult OnGetAsync(string walletId, string transactionId)
     {
+        if (CurrentWallet == null)
+            return NotFound();
+
         Transaction = CurrentWallet.Transactions.FirstOrDefault(t => t.TransactionId == transactionId);
         if (Transaction == null)
             return NotFound();
@@ -34,6 +37,9 @@ public class DeleteModel : BasePageModel
 
     public async Task<IActionResult> OnPostAsync(string walletId, string transactionId)
     {
+        if (CurrentWallet == null)
+            return NotFound();
+
         Transaction = CurrentWallet.Transactions.FirstOrDefault(t => t.TransactionId == transactionId);
         if (Transaction == null)
             return NotFound();

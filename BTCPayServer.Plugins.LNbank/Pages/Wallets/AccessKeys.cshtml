@@ -6,9 +6,9 @@
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.AccessKeysModel
 
 @{
-    ViewData.SetActivePage(LNbankNavPages.WalletAccessKeys, $"Access keys for \"{Model.Wallet.Name}\"", Model.Wallet.WalletId);
-    var accessLevelOptions = new SelectList(typeof(AccessLevel).GetEnumNames().Select(o => 
-        new SelectListItem(typeof(AccessLevel).DisplayName(o), o)), 
+    ViewData.SetActivePage(LNbankNavPages.WalletAccessKeys, $"Access keys for \"{Model.CurrentWallet.Name}\"", Model.CurrentWallet.WalletId);
+    var accessLevelOptions = new SelectList(typeof(AccessLevel).GetEnumNames().Select(o =>
+        new SelectListItem(typeof(AccessLevel).DisplayName(o), o)),
         nameof(SelectListItem.Value), nameof(SelectListItem.Text), Model.AccessKey?.Level);
 }
 
@@ -16,8 +16,8 @@
     <partial name="_ValidationScriptsPartial" />
 }
 
-<partial name="_WalletHeader" model="Model.Wallet"/>
-<partial name="_Nav" model="Model.Wallet"/>
+<partial name="_WalletHeader" model="Model.CurrentWallet"/>
+<partial name="_Nav" model="Model.CurrentWallet"/>
 
 <div class="row">
     <div class="col-xxl-constrain">

@@ -14,7 +14,6 @@ namespace BTCPayServer.Plugins.LNbank.Pages.Transactions;
 [Authorize(AuthenticationSchemes = AuthenticationSchemes.Cookie, Policy = LNbankPolicies.CanViewWallet)]
 public class DetailsModel : BasePageModel
 {
-    public Wallet Wallet { get; set; }
     public Transaction Transaction { get; set; }
 
     public DetailsModel(
@@ -22,14 +21,12 @@ public class DetailsModel : BasePageModel
         WalletRepository walletRepository,
         WalletService walletService) : base(userManager, walletRepository, walletService) { }
 
-    public async Task<IActionResult> OnGetAsync(string walletId, string transactionId)
+    public IActionResult OnGetAsync(string walletId, string transactionId)
     {
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
+        if (CurrentWallet == null)
             return NotFound();
 
-        Transaction = Wallet.Transactions.FirstOrDefault(t => t.TransactionId == transactionId);
-
+        Transaction = CurrentWallet.Transactions.FirstOrDefault(t => t.TransactionId == transactionId);
         if (Transaction == null)
             return NotFound();
 

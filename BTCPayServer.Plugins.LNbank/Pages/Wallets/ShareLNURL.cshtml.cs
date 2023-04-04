@@ -22,7 +22,8 @@ public class ShareLNURLModel : BasePageModel
     {
         Wallet = await WalletRepository.GetWallet(new WalletsQuery
         {
-            WalletId = new[] { walletId }
+            WalletId = new[] { walletId },
+            IsServerAdmin = User.IsInRole(Roles.ServerAdmin)
         });
 
         if (Wallet == null)

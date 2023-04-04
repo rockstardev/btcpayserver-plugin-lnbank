@@ -22,7 +22,6 @@ public class SendModel : BasePageModel
 {
     private readonly ILogger _logger;
 
-    public Wallet Wallet { get; set; }
     public BOLT11PaymentRequest Bolt11 { get; set; }
     public LNURLPayRequest LnurlPay { get; set; }
 
@@ -55,10 +54,9 @@ public class SendModel : BasePageModel
         _logger = logger;
     }
 
-    public async Task<IActionResult> OnGet(string walletId)
+    public IActionResult OnGet(string walletId)
     {
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
+        if (CurrentWallet == null)
             return NotFound();
 
         return Page();
@@ -66,8 +64,7 @@ public class SendModel : BasePageModel
 
     public async Task<IActionResult> OnPostDecodeAsync(string walletId)
     {
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
+        if (CurrentWallet == null)
             return NotFound();
         if (!ModelState.IsValid)
             return Page();
@@ -123,8 +120,7 @@ public class SendModel : BasePageModel
 
     public async Task<IActionResult> OnPostConfirmAsync(string walletId)
     {
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
+        if (CurrentWallet == null)
             return NotFound();
         if (!ModelState.IsValid)
             return Page();
@@ -173,7 +169,7 @@ public class SendModel : BasePageModel
         try
         {
             var explicitAmount = ExplicitAmount.HasValue ? LightMoney.Satoshis(ExplicitAmount.Value) : null;
-            var transaction = await WalletService.Send(Wallet, Bolt11, Description, explicitAmount);
+            var transaction = await WalletService.Send(CurrentWallet, Bolt11, Description, explicitAmount);
             TempData[WellKnownTempData.SuccessMessage] = transaction.IsPending
                 ? "Payment successfully sent, awaiting settlement."
                 : "Payment successfully sent and settled.";

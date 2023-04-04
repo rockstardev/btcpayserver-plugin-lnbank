@@ -14,7 +14,6 @@ namespace BTCPayServer.Plugins.LNbank.Pages.Transactions;
 [Authorize(AuthenticationSchemes = AuthenticationSchemes.Cookie, Policy = LNbankPolicies.CanManageWallet)]
 public class EditModel : BasePageModel
 {
-    public Wallet Wallet { get; set; }
     public Transaction Transaction { get; set; }
 
     public EditModel(
@@ -22,14 +21,12 @@ public class EditModel : BasePageModel
         WalletRepository walletRepository,
         WalletService walletService) : base(userManager, walletRepository, walletService) { }
 
-    public async Task<IActionResult> OnGetAsync(string walletId, string transactionId)
+    public IActionResult OnGetAsync(string walletId, string transactionId)
     {
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
+        if (CurrentWallet == null)
             return NotFound();
 
-        Transaction = Wallet.Transactions.FirstOrDefault(t => t.TransactionId == transactionId);
-
+        Transaction = CurrentWallet.Transactions.FirstOrDefault(t => t.TransactionId == transactionId);
         if (Transaction == null)
             return NotFound();
 
@@ -38,26 +35,27 @@ public class EditModel : BasePageModel
 
     public async Task<IActionResult> OnPostAsync(string walletId, string transactionId)
     {
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
+        if (CurrentWallet == null)
             return NotFound();
 
         Transaction = await WalletRepository.GetTransaction(new TransactionQuery
         {
             UserId = UserId,
-            WalletId = Wallet.WalletId,
+            WalletId = CurrentWallet.WalletId,
             TransactionId = transactionId
         });
 
-        if (!ModelState.IsValid)
-            return Page();
+        Transaction = CurrentWallet.Transactions.FirstOrDefault(t => t.TransactionId == transactionId);
         if (Transaction == null)
             return NotFound();
+
+        if (!ModelState.IsValid)
+            return Page();
 
         if (await TryUpdateModelAsync(Transaction, "transaction", t => t.Description))
         {
             await WalletRepository.UpdateTransaction(Transaction);
-            return RedirectToPage("/Wallets/Wallet", new { Wallet.WalletId });
+            return RedirectToPage("/Wallets/Wallet", new { CurrentWallet.WalletId });
         }
 
         return Page();

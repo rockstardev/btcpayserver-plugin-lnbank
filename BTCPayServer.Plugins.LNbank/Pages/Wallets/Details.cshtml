@@ -3,44 +3,44 @@
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.DetailsModel
 
 @{
-    ViewData.SetActivePage(LNbankNavPages.WalletSettings, Model.Wallet.Name, Model.Wallet.WalletId);
+    ViewData.SetActivePage(LNbankNavPages.WalletSettings, Model.CurrentWallet.Name, Model.CurrentWallet.WalletId);
     string lndhubUrl = null;
-    var adminKey = Model.Wallet.AccessKeys.FirstOrDefault(ak => ak.Level == AccessLevel.Admin);
+    var adminKey = Model.CurrentWallet.AccessKeys.FirstOrDefault(ak => ak.Level == AccessLevel.Admin);
     if (adminKey != null)
     {
         var endpoint = new Uri($"{Request.Scheme}://{Request.Host}{Request.PathBase.ToUriComponent()}/plugins/lnbank/api/lndhub");
-        lndhubUrl = $"lndhub://{Model.Wallet.WalletId}:{adminKey.Key}@{endpoint}";
+        lndhubUrl = $"lndhub://{Model.CurrentWallet.WalletId}:{adminKey.Key}@{endpoint}";
     }
 }
 
-<partial name="_WalletHeader" model="Model.Wallet"/>
-<partial name="_Nav" model="Model.Wallet"/>
+<partial name="_WalletHeader" model="Model.CurrentWallet"/>
+<partial name="_Nav" model="Model.CurrentWallet"/>
 
 <dl class="row">
     <dt class="col-sm-3 col-xl-2">
-        @Html.DisplayNameFor(model => model.Wallet.Balance)
+        @Html.DisplayNameFor(model => model.CurrentWallet.Balance)
     </dt>
     <dd class="col-sm-9 col-xl-10" id="LNbank-Balance">
-        @Helpers.Sats(Model.Wallet.Balance) /
-        @Helpers.Millisats(Model.Wallet.Balance)
+        @Helpers.Sats(Model.CurrentWallet.Balance) /
+        @Helpers.Millisats(Model.CurrentWallet.Balance)
     </dd>
     <dt class="col-sm-3 col-xl-2">
-        @Html.DisplayNameFor(model => model.Wallet.WalletId)
+        @Html.DisplayNameFor(model => model.CurrentWallet.WalletId)
     </dt>
     <dd class="col-sm-9 col-xl-10" id="LNbank-WalletId">
-        @Model.Wallet.WalletId
+        @Model.CurrentWallet.WalletId
     </dd>
     <dt class="col-sm-3 col-xl-2">
-        @Html.DisplayNameFor(model => model.Wallet.CreatedAt)
+        @Html.DisplayNameFor(model => model.CurrentWallet.CreatedAt)
     </dt>
     <dd class="col-sm-9 col-xl-10">
-        @Model.Wallet.CreatedAt
+        @Model.CurrentWallet.CreatedAt
     </dd>
     <dt class="col-sm-3 col-xl-2">
         LNURL
     </dt>
     <dd class="col-sm-9 col-xl-10">
-        <a asp-page="./ShareLNURL" asp-route-walletId="@Model.Wallet.WalletId" target="lnurl-@Model.Wallet.WalletId">Receive</a>
+        <a asp-page="./ShareLNURL" asp-route-walletId="@Model.CurrentWallet.WalletId" target="lnurl-@Model.CurrentWallet.WalletId">Receive</a>
     </dd>
 </dl>
 
@@ -49,13 +49,13 @@
         <form method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
-                <label asp-for="Wallet.Name" class="form-label"></label>
-                <input asp-for="Wallet.Name" class="form-control" />
-                <span asp-validation-for="Wallet.Name" class="text-danger"></span>
+                <label asp-for="CurrentWallet.Name" class="form-label"></label>
+                <input asp-for="CurrentWallet.Name" class="form-control" />
+                <span asp-validation-for="CurrentWallet.Name" class="text-danger"></span>
             </div>
             <div class="form-group d-flex align-items-center gap-3">
-                <input asp-for="Wallet.PrivateRouteHintsByDefault" type="checkbox" class="btcpay-toggle"/>
-                <label asp-for="Wallet.PrivateRouteHintsByDefault" class="form-label mb-0"></label>
+                <input asp-for="CurrentWallet.PrivateRouteHintsByDefault" type="checkbox" class="btcpay-toggle"/>
+                <label asp-for="CurrentWallet.PrivateRouteHintsByDefault" class="form-label mb-0"></label>
             </div>
             <div class="form-group">
                 <input type="submit" value="Save" class="btn btn-primary mt-2" />
@@ -102,6 +102,6 @@
 
 <h3 class="mt-5 mb-4">Other options</h3>
 
-<a asp-page="./Delete" asp-route-walletId="@Model.Wallet.WalletId" class="btn btn-sm btn-outline-danger">
+<a asp-page="./Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" class="btn btn-sm btn-outline-danger">
     Delete Wallet
 </a>

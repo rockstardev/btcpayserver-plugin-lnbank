@@ -2,20 +2,20 @@
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.DeleteModel
 
 @{
-    ViewData.SetActivePage(LNbankNavPages.WalletSettings, $"Delete \"{Model.Wallet.Name}\"", Model.Wallet.WalletId);
+    ViewData.SetActivePage(LNbankNavPages.WalletSettings, $"Delete \"{Model.CurrentWallet.Name}\"", Model.CurrentWallet.WalletId);
 }
 
-<partial name="_WalletHeader" model="Model.Wallet"/>
-<partial name="_Nav" model="Model.Wallet"/>
+<partial name="_WalletHeader" model="Model.CurrentWallet"/>
+<partial name="_Nav" model="Model.CurrentWallet"/>
 
-@if (Model.Wallet.HasBalance)
+@if (Model.CurrentWallet.HasBalance)
 {
-    <p>This wallet still has a balance. Please <a asp-page="./Send" asp-route-walletId="@Model.Wallet.WalletId">transfer the funds</a> before deleting it.</p>
+    <p>This wallet still has a balance. Please <a asp-page="./Send" asp-route-walletId="@Model.CurrentWallet.WalletId">transfer the funds</a> before deleting it.</p>
 }
 else
 {
     <p>Are you sure you want to delete this wallet?</p>
-    
+
     <form method="post">
         <input type="submit" value="Delete" class="btn btn-danger" id="LNbank-Delete" />
     </form>

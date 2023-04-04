@@ -17,8 +17,6 @@ namespace BTCPayServer.Plugins.LNbank.Pages.Wallets;
 [Authorize(AuthenticationSchemes = AuthenticationSchemes.Cookie, Policy = LNbankPolicies.CanManageWallet)]
 public class AccessKeysModel : BasePageModel
 {
-    public Wallet Wallet { get; set; }
-
     [BindProperty]
     public AccessKeyViewModel AccessKey { get; set; }
     public List<AccessKeyViewModel> AccessKeys { get; set; }
@@ -39,22 +37,20 @@ public class AccessKeysModel : BasePageModel
 
     public async Task<IActionResult> OnGetAsync(string walletId)
     {
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
+        if (CurrentWallet == null)
             return NotFound();
 
-        AccessKeys = await GetAccessKeyVMs(Wallet.AccessKeys);
+        AccessKeys = await GetAccessKeyVMs(CurrentWallet.AccessKeys);
 
         return Page();
     }
 
     public async Task<IActionResult> OnPostAddAsync(string walletId)
     {
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
+        if (CurrentWallet == null)
             return NotFound();
 
-        AccessKeys = await GetAccessKeyVMs(Wallet.AccessKeys);
+        AccessKeys = await GetAccessKeyVMs(CurrentWallet.AccessKeys);
         if (!ModelState.IsValid)
             return Page();
 
@@ -71,20 +67,19 @@ public class AccessKeysModel : BasePageModel
             return Page();
         }
 
-        await WalletRepository.AddOrUpdateAccessKey(Wallet.WalletId, user.Id, AccessKey.Level);
+        await WalletRepository.AddOrUpdateAccessKey(CurrentWallet.WalletId, user.Id, AccessKey.Level);
         TempData[WellKnownTempData.SuccessMessage] = "Access key added successfully.";
         return RedirectToPage("./AccessKeys", new { walletId });
     }
 
     public async Task<IActionResult> OnPostRemoveAsync(string walletId, string key)
     {
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
+        if (CurrentWallet == null)
             return NotFound();
 
         try
         {
-            await WalletRepository.DeleteAccessKey(Wallet.WalletId, key);
+            await WalletRepository.DeleteAccessKey(CurrentWallet.WalletId, key);
 
             TempData[WellKnownTempData.SuccessMessage] = "Access key removed successfully.";
             return RedirectToPage("./AccessKeys", new { walletId });
@@ -94,7 +89,7 @@ public class AccessKeysModel : BasePageModel
             TempData[WellKnownTempData.ErrorMessage] = "Failed to remove user.";
         }
 
-        AccessKeys = await GetAccessKeyVMs(Wallet.AccessKeys);
+        AccessKeys = await GetAccessKeyVMs(CurrentWallet.AccessKeys);
         return Page();
     }
 

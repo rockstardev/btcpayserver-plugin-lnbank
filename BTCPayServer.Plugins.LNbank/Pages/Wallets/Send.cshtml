@@ -5,7 +5,7 @@
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.SendModel
 
 @{
-    ViewData.SetActivePage(LNbankNavPages.Wallet, "Send", Model.Wallet.WalletId);
+    ViewData.SetActivePage(LNbankNavPages.Wallet, "Send", Model.CurrentWallet.WalletId);
     var initialStep = Model.Bolt11 == null && Model.LnurlPay == null;
 }
 
@@ -13,7 +13,7 @@
     <partial name="_ValidationScriptsPartial" />
 }
 
-<partial name="_WalletHeader" model="Model.Wallet"/>
+<partial name="_WalletHeader" model="Model.CurrentWallet"/>
 
 @if (!ModelState.IsValid)
 {
@@ -40,19 +40,19 @@
         @if (Model.PaymentRequest != null)
         {
             <input asp-for="PaymentRequest" type="hidden" required/>
-            
+
             <p id="LNbank-Expiry">
                 Expires
                 @Model.Bolt11.ExpiryDate.ToTimeAgo()
                 <span class="text-muted">(@Model.Bolt11.ExpiryDate)</span>
             </p>
-            
+
             @if (Model.ExplicitAmount != null)
             {
                 <div class="form-group">
                     <label asp-for="ExplicitAmount" class="form-label" data-required></label>
                     <div class="input-group">
-                        <input asp-for="ExplicitAmount" class="form-control flex-grow-0 text-end hide-number-spin" type="number" aria-describedby="ExplicitAmount-Addon" max="@Model.Wallet.Balance.ToUnit(LightMoneyUnit.Satoshi)" style="width:15ch;" autofocus required />
+                        <input asp-for="ExplicitAmount" class="form-control flex-grow-0 text-end hide-number-spin" type="number" aria-describedby="ExplicitAmount-Addon" max="@Model.CurrentWallet.Balance.ToUnit(LightMoneyUnit.Satoshi)" style="width:15ch;" autofocus required />
                         <span class="input-group-text" id="ExplicitAmount-Addon">SATS</span>
                     </div>
                     <span asp-validation-for="ExplicitAmount" class="text-danger"></span>
@@ -91,14 +91,14 @@
             {
                 <div class="form-group">
                     <label asp-for="ExplicitAmount" class="form-label" data-required></label>
-                    <input asp-for="ExplicitAmount" class="form-control text-end hide-number-spin" type="number" 
+                    <input asp-for="ExplicitAmount" class="form-control text-end hide-number-spin" type="number"
                            min="@Model.LnurlPay.MinSendable.ToUnit(LightMoneyUnit.Satoshi)"
-                           max="@Math.Min(Model.Wallet.Balance.ToUnit(LightMoneyUnit.Satoshi), 
+                           max="@Math.Min(Model.CurrentWallet.Balance.ToUnit(LightMoneyUnit.Satoshi),
                                     Model.LnurlPay.MaxSendable.ToUnit(LightMoneyUnit.Satoshi))"
                            style="width:15ch;" autofocus required />
                     <div class="form-text text-muted">
                         Minimum: @Helpers.Sats(Model.LnurlPay.MinSendable) /
-                        Maximum: @Helpers.Sats(Math.Min(Model.Wallet.Balance, Model.LnurlPay.MaxSendable))
+                        Maximum: @Helpers.Sats(Math.Min(Model.CurrentWallet.Balance, Model.LnurlPay.MaxSendable))
                     </div>
                     <span asp-validation-for="ExplicitAmount" class="text-danger"></span>
                 </div>
@@ -119,7 +119,7 @@
         </div>
         <div class="form-group">
             <button type="submit" class="btn btn-primary" id="LNbank-Send">
-                Send 
+                Send
                 @if (Model.ExplicitAmount == null && (Model.Bolt11?.MinimumAmount ?? Model.LnurlPay?.MinSendable) != null)
                 {
                     @Helpers.Sats(Model.Bolt11?.MinimumAmount ?? Model.LnurlPay?.MinSendable);

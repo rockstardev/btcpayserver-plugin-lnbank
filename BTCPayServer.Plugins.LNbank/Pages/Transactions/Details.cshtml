@@ -7,11 +7,11 @@
 @model BTCPayServer.Plugins.LNbank.Pages.Transactions.DetailsModel
 
 @{
-    ViewData.SetActivePage(LNbankNavPages.Wallet, Model.Transaction.Description, Model.Wallet.WalletId);
+    ViewData.SetActivePage(LNbankNavPages.Wallet, Model.Transaction.Description, Model.CurrentWallet.WalletId);
     var publicShareUrl = Url.PageLink("/Transactions/Share", null, new { transactionId = Model.Transaction.TransactionId });
 }
 
-<partial name="_WalletHeader" model="Model.Wallet"/>
+<partial name="_WalletHeader" model="Model.CurrentWallet"/>
 
 <h2 id="LNbank-TransactionTitle">@ViewData["Title"]</h2>
 @if (Model.Transaction.IsPaid || Model.Transaction.IsSettled)
@@ -99,7 +99,7 @@ else
         {
             <span id="LNbank-TransactionDescription">@Model.Transaction.Description</span>
         }
-        <a asp-page="./Edit" asp-route-walletId="@Model.Wallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId">Edit</a>
+        <a asp-page="./Edit" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId">Edit</a>
     </dd>
     @if (Model.Transaction.IsPaid || Model.Transaction.IsSettled)
     {
@@ -154,7 +154,7 @@ else
 <div permission="@LNbankPolicies.CanManageLNbank">
     <h3 class="mt-5 mb-4">Other options</h3>
 
-    <a asp-page="./Delete" asp-route-walletId="@Model.Wallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-description="This will delete this transaction." data-confirm-input="DELETE" class="btn btn-sm btn-outline-danger">
+    <a asp-page="./Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-description="This will delete this transaction." data-confirm-input="DELETE" class="btn btn-sm btn-outline-danger">
         Delete Transaction
     </a>
 </div>

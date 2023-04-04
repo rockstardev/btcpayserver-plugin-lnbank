@@ -37,7 +37,8 @@ public class WalletsController : ControllerBase
         var wallets = await _walletRepository.GetWallets(new WalletsQuery
         {
             UserId = new[] { GetUserId() },
-            IncludeTransactions = true
+            IncludeTransactions = true,
+            IsServerAdmin = User.IsInRole(Roles.ServerAdmin)
         });
 
         return Ok(wallets.Select(FromModel));
@@ -89,7 +90,8 @@ public class WalletsController : ControllerBase
             UserId = new[] { GetUserId() },
             WalletId = new[] { walletId },
             IncludeTransactions = true,
-            IncludeAccessKeys = true
+            IncludeAccessKeys = true,
+            IsServerAdmin = User.IsInRole(Roles.ServerAdmin)
         });
 
         if (wallet == null)
@@ -121,13 +123,16 @@ public class WalletsController : ControllerBase
         }
     }
 
-    private async Task<Wallet> FetchWallet(string walletId) =>
-        await _walletRepository.GetWallet(new WalletsQuery
+    private async Task<Wallet> FetchWallet(string walletId)
+    {
+        return await _walletRepository.GetWallet(new WalletsQuery
         {
             UserId = new[] { GetUserId() },
             WalletId = new[] { walletId },
-            IncludeTransactions = true
+            IncludeTransactions = true,
+            IsServerAdmin = User.IsInRole(Roles.ServerAdmin)
         });
+    }
 
     private IActionResult Validate(EditWalletRequest request)
     {

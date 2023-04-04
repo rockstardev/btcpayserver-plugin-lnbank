@@ -2,14 +2,14 @@
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.ReceiveModel
 
 @{
-    ViewData.SetActivePage(LNbankNavPages.Wallet, "Receive", Model.Wallet.WalletId);
+    ViewData.SetActivePage(LNbankNavPages.Wallet, "Receive", Model.CurrentWallet.WalletId);
 }
 
 @section LNbankFoot {
     <partial name="_ValidationScriptsPartial" />
 }
 
-<partial name="_WalletHeader" model="Model.Wallet"/>
+<partial name="_WalletHeader" model="Model.CurrentWallet"/>
 
 @if (!ModelState.IsValid)
 {
@@ -38,7 +38,7 @@
         @await Component.InvokeAsync("Icon", new { symbol = "caret-down" })
         <span class="ms-1">Advanced settings</span>
     </button>
-    <div id="AdvancedSettings" class="collapse @(Model.PrivateRouteHints != Model.Wallet.PrivateRouteHintsByDefault || Model.Expiry.HasValue ? "show" : "")">
+    <div id="AdvancedSettings" class="collapse @(Model.PrivateRouteHints != Model.CurrentWallet.PrivateRouteHintsByDefault || Model.Expiry.HasValue ? "show" : "")">
         <div class="pt-3 pb-1">
             <div class="form-group">
                 <label asp-for="Expiry" class="form-label"></label>
@@ -62,4 +62,4 @@
     </div>
 </form>
 
-<p class="mt-5 text-muted">Alternatively you can use <a asp-page="./ShareLNURL" asp-route-walletId="@Model.Wallet.WalletId" target="lnurl-@Model.Wallet.WalletId">LNURL</a> to receive to your wallet.</p>
+<p class="mt-5 text-muted">Alternatively you can use <a asp-page="./ShareLNURL" asp-route-walletId="@Model.CurrentWallet.WalletId" target="lnurl-@Model.CurrentWallet.WalletId">LNURL</a> to receive to your wallet.</p>

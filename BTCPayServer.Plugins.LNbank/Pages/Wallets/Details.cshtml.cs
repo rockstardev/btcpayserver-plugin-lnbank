@@ -14,19 +14,13 @@ namespace BTCPayServer.Plugins.LNbank.Pages.Wallets;
 [Authorize(AuthenticationSchemes = AuthenticationSchemes.Cookie, Policy = LNbankPolicies.CanManageWallet)]
 public class DetailsModel : BasePageModel
 {
-    public Wallet Wallet { get; set; }
-
     public DetailsModel(
         UserManager<ApplicationUser> userManager,
         WalletRepository walletRepository,
         WalletService walletService) : base(userManager, walletRepository, walletService) { }
 
-    public async Task<IActionResult> OnGetAsync(string walletId)
+    public IActionResult OnGetAsync(string walletId)
     {
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
-            return NotFound();
-
         return Page();
     }
 
@@ -37,13 +31,9 @@ public class DetailsModel : BasePageModel
             return Page();
         }
 
-        Wallet = await GetWallet(UserId, walletId);
-        if (Wallet == null)
-            return NotFound();
-
-        if (await TryUpdateModelAsync(Wallet, "wallet", w => w.Name, w => w.PrivateRouteHintsByDefault))
+        if (await TryUpdateModelAsync(CurrentWallet, "wallet", w => w.Name, w => w.PrivateRouteHintsByDefault))
         {
-            await WalletRepository.AddOrUpdateWallet(Wallet);
+            await WalletRepository.AddOrUpdateWallet(CurrentWallet);
             TempData[WellKnownTempData.SuccessMessage] = "Wallet successfully updated.";
             return RedirectToPage("./Details", new { walletId });
         }
