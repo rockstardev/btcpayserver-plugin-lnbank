@@ -124,21 +124,21 @@ else
         <dt class="col-sm-3 col-xl-2">
             @Html.DisplayNameFor(model => model.Transaction.InvoiceId)
         </dt>
-        <dd class="col-sm-9 col-xl-10 text-break">
-            <span class="text-truncate d-block" style="max-width:400px">@Model.Transaction.InvoiceId</span>
+        <dd class="col-sm-9 col-xl-10">
+            @await Component.InvokeAsync("TruncateCenter", new { text = Model.Transaction.InvoiceId, classes = "truncate-center-id" })
         </dd>
     }
     <dt class="col-sm-3 col-xl-2">
         @Html.DisplayNameFor(model => model.Transaction.PaymentRequest)
     </dt>
-    <dd class="col-sm-9 col-xl-10 text-break">
-        <span class="text-truncate d-block" style="max-width:400px">@Model.Transaction.PaymentRequest</span>
+    <dd class="col-sm-9 col-xl-10">
+        @await Component.InvokeAsync("TruncateCenter", new { text = Model.Transaction.PaymentRequest, classes = "truncate-center-id" })
     </dd>
     <dt class="col-sm-3 col-xl-2">
         @Html.DisplayNameFor(model => model.Transaction.PaymentHash)
     </dt>
     <dd class="col-sm-9 col-xl-10">
-        @Model.Transaction.PaymentHash
+        @await Component.InvokeAsync("TruncateCenter", new { text = Model.Transaction.PaymentHash, classes = "truncate-center-id" })
     </dd>
     @if (!string.IsNullOrEmpty(Model.Transaction.Preimage))
     {
@@ -146,7 +146,7 @@ else
             @Html.DisplayNameFor(model => model.Transaction.Preimage)
         </dt>
         <dd class="col-sm-9 col-xl-10">
-            @Model.Transaction.Preimage
+            @await Component.InvokeAsync("TruncateCenter", new { text = Model.Transaction.Preimage, classes = "truncate-center-id" })
         </dd>
     }
 </dl>
