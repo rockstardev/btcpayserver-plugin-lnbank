@@ -16,14 +16,13 @@ public class LNbankPlugin : BaseBTCPayServerPlugin
 {
     public override IBTCPayServerPlugin.PluginDependency[] Dependencies { get; } =
     {
-        new IBTCPayServerPlugin.PluginDependency { Identifier = nameof(BTCPayServer), Condition = ">=1.8.2" }
+        new () { Identifier = nameof(BTCPayServer), Condition = ">=1.9.0" }
     };
 
     public override void Execute(IServiceCollection services)
     {
         services.AddSingleton<IUIExtension>(new UIExtension("LNbankNavExtension", "header-nav"));
-        services.AddSingleton<IUIExtension>(new UIExtension("LNPaymentMethodSetupTabhead",
-            "ln-payment-method-setup-tabhead"));
+        services.AddSingleton<IUIExtension>(new UIExtension("LNPaymentMethodSetupTabhead", "ln-payment-method-setup-tabhead"));
         services.AddSingleton<IUIExtension>(new UIExtension("LNPaymentMethodSetupTab", "ln-payment-method-setup-tab"));
 
         services.AddSingleton<IPluginHookFilter, AuthorizationRequirementHandler>();
