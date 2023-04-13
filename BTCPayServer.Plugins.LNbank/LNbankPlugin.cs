@@ -30,7 +30,7 @@ public class LNbankPlugin : BaseBTCPayServerPlugin
         services.AddSingleton<LNbankPluginDbContextFactory>();
         services.AddDbContext<LNbankPluginDbContext>((provider, o) =>
         {
-            LNbankPluginDbContextFactory factory = provider.GetRequiredService<LNbankPluginDbContextFactory>();
+            var factory = provider.GetRequiredService<LNbankPluginDbContextFactory>();
             factory.ConfigureBuilder(o);
         });
         services.AddAppServices();
