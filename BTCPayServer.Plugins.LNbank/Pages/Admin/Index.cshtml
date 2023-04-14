@@ -1,9 +1,5 @@
 @page "/plugins/lnbank/admin"
 @using Microsoft.AspNetCore.Mvc.TagHelpers
-@using BTCPayServer.Data
-@using BTCPayServer.Lightning
-@using Microsoft.AspNetCore.Identity
-@inject UserManager<ApplicationUser> UserManager
 @model BTCPayServer.Plugins.LNbank.Pages.Admin.IndexModel
 
 @{
@@ -22,20 +18,18 @@
 
 <partial name="_StatusMessage" />
 
-@if (Model.Wallets.Any())
+@if (Model.WalletsByUserId.Any())
 {
-    @foreach (var userId in Model.Wallets.Keys)
+    @foreach (var entry in Model.WalletsByUserId.Keys.Select(userId => Model.WalletsByUserId[userId]))
     {
-        var user = await UserManager.FindByIdAsync(userId);
-        var userWallets = Model.Wallets[userId].ToList();
         <h4 class="d-flex flex-wrap align-items-center gap-2 mb-3">
-            @user.UserName
+            @entry.User.UserName
             <span class="badge bg-light fs-6">
-                @Helpers.Sats(userWallets.Aggregate(LightMoney.Zero, (total, t) => total + t.Balance))
+                @Helpers.Sats(entry.TotalBalance)
             </span>
         </h4>
         <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 row-cols-xxl-4 g-3 mb-5">
-            @foreach (var wallet in userWallets)
+            @foreach (var wallet in entry.Wallets)
             {
                 <div class="col">
                     <div class="card">

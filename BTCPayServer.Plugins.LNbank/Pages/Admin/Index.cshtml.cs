@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace BTCPayServer.Plugins.LNbank.Pages.Admin;
 public class IndexModel : BasePageModel
 {
     private readonly BTCPayService _btcpayService;
-    public Dictionary<string, IEnumerable<Wallet>> Wallets { get; set; }
+    public Dictionary<string, WalletsViewModel> WalletsByUserId { get; set; }
     public LightMoney TotalBalance { get; set; }
     public bool IsReady { get; set; }
 
@@ -39,21 +40,39 @@ public class IndexModel : BasePageModel
             TempData[WellKnownTempData.ErrorMessage] = "LNbank requires an internal Lightning node to be configured.";
         }
 
-        var wallets = await WalletRepository.GetWallets(new WalletsQuery
-        {
-            IncludeTransactions = true,
-            IncludeUser = true
-        });
-
-        Wallets = wallets
+        var walletsByUserId = (await WalletRepository.GetWallets(new WalletsQuery
+            {
+                IncludeTransactions = true,
+                IncludeUser = true
+            }))
             .GroupBy(w => w.UserId)
-            .ToDictionary(g => g.Key,
-                g => g.AsEnumerable());
+            .ToDictionary(g => g.Key, g => g.AsEnumerable());
 
-        TotalBalance = wallets
-            .Select(w => w.Balance)
-            .Aggregate((res, current) => res + current);
+        TotalBalance = LightMoney.Zero;
+        WalletsByUserId = new Dictionary<string, WalletsViewModel>();
+        foreach (var userId in walletsByUserId.Keys)
+        {
+            var user = await UserManager.FindByIdAsync(userId);
+            if (user == null) continue;
+
+            var userWallets = walletsByUserId[userId].ToList();
+            var userTotal = userWallets.Aggregate(LightMoney.Zero, (total, t) => total + t.Balance);
+            WalletsByUserId[userId] = new WalletsViewModel
+            {
+                User = user,
+                Wallets = userWallets,
+                TotalBalance = userTotal
+            };
+            TotalBalance += userTotal;
+        }
 
         return Page();
     }
+}
+
+public class WalletsViewModel
+{
+    public ApplicationUser User { get; init; }
+    public IEnumerable<Wallet> Wallets { get; init; }
+    public LightMoney TotalBalance { get; set; }
 }
