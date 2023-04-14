@@ -55,4 +55,4 @@ When using LNbank on a third-party instance whose owner you don't know, mitigate
 
 ## Support this plugin
 
-![Support this plugin](./docs/img/support.png)
+[![Support this plugin](./docs/img/support.png)](lightning:LNURL1DP68GURN8GHJ7AMPD3KX2AR0VEEKZAR0WD5XJTNRDAKJ7TNHV4KXCTTTDEHHWM30D3H82UNVWQHKXUN0WAJX2ER9V9E8G6PN8QSKVTEZ)
