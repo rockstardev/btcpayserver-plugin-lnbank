@@ -1,10 +1,6 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Contracts;
-using BTCPayServer.Lightning;
-using BTCPayServer.Plugins.LNbank.Data;
-using BTCPayServer.Plugins.LNbank.Data.Models;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -29,21 +25,21 @@ public class LNbankPluginMigrationRunner : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        LNbankPluginDataMigrationHistory settings =
+        var settings =
             await _settingsRepository.GetSettingAsync<LNbankPluginDataMigrationHistory>() ??
             new LNbankPluginDataMigrationHistory();
 
-        await using LNbankPluginDbContext ctx = _dbContextFactory.CreateContext();
-        await using LNbankPluginDbContext dbContext = _dbContextFactory.CreateContext();
+        await using var ctx = _dbContextFactory.CreateContext();
+        await using var dbContext = _dbContextFactory.CreateContext();
         await ctx.Database.MigrateAsync(cancellationToken);
 
         if (!settings.ExtendedAccessKeysWithUserId)
         {
-            List<AccessKey> accessKeys = await dbContext.AccessKeys
+            var accessKeys = await dbContext.AccessKeys
                 .Include(a => a.Wallet)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
-            foreach (AccessKey accessKey in accessKeys)
+            foreach (var accessKey in accessKeys)
             {
                 accessKey.UserId = accessKey.Wallet?.UserId;
                 dbContext.Update(accessKey);
@@ -57,10 +53,10 @@ public class LNbankPluginMigrationRunner : IHostedService
 
         if (!settings.ExtendedTransactionsWithPaymentHash)
         {
-            List<Transaction> transactions = await dbContext.Transactions.ToListAsync(cancellationToken);
-            foreach (Transaction transaction in transactions)
+            var transactions = await dbContext.Transactions.ToListAsync(cancellationToken);
+            foreach (var transaction in transactions)
             {
-                BOLT11PaymentRequest bolt11 = _walletService.ParsePaymentRequest(transaction.PaymentRequest);
+                var bolt11 = _walletService.ParsePaymentRequest(transaction.PaymentRequest);
                 transaction.PaymentHash = bolt11.PaymentHash?.ToString();
                 dbContext.Update(transaction);
             }
@@ -77,7 +73,7 @@ public class LNbankPluginMigrationRunner : IHostedService
         return Task.CompletedTask;
     }
 
-    public class LNbankPluginDataMigrationHistory
+    private class LNbankPluginDataMigrationHistory
     {
         public bool ExtendedAccessKeysWithUserId { get; set; }
         public bool ExtendedTransactionsWithPaymentHash { get; set; }

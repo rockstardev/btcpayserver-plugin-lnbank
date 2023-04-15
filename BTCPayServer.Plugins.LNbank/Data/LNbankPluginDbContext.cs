@@ -1,6 +1,3 @@
-using System;
-using System.Linq;
-using BTCPayServer.Lightning;
 using BTCPayServer.Plugins.LNbank.Data.Models;
 using Microsoft.EntityFrameworkCore;
 

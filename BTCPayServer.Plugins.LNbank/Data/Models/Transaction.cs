@@ -69,9 +69,8 @@ public class Transaction
         }
     }
 
-    public LightningInvoiceStatus LightningInvoiceStatus
-    {
-        get => Status switch
+    public LightningInvoiceStatus LightningInvoiceStatus =>
+        Status switch
         {
             StatusSettled => LightningInvoiceStatus.Paid,
             StatusPaid => LightningInvoiceStatus.Paid,
@@ -83,7 +82,6 @@ public class Transaction
             StatusCancelled => LightningInvoiceStatus.Expired,
             _ => throw new NotSupportedException($"'{Status}' cannot be mapped to any LightningInvoiceStatus")
         };
-    }
 
     public LightningPaymentStatus LightningPaymentStatus
     {
