@@ -7,7 +7,8 @@ namespace BTCPayServer.Plugins.LNbank.Services;
 
 public class LightningInvoicePayRequest
 {
-    [Required] public string PaymentRequest { get; set; }
+    [Required]
+    public string PaymentRequest { get; set; }
 
     public float? MaxFeePercent { get; set; }
 

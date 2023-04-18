@@ -105,7 +105,8 @@
                             walletId = Model.CurrentWallet.WalletId,
                             withdrawConfigId = withdrawConfig.WithdrawConfigId
                         }, HttpContext.Request.Scheme, HttpContext.Request.Host.ToString()) ?? string.Empty);
-                        var lnurl = LNURL.LNURL.EncodeUri(lnurlEndpoint, "withdrawRequest", true).ToString().Replace("lightning:", "");;
+                        var lnurl = LNURL.LNURL.EncodeUri(lnurlEndpoint, "withdrawRequest", true).ToString().Replace("lightning:", "");
+                        var lnurlUri = LNURL.LNURL.EncodeUri(lnurlEndpoint, "withdrawRequest", false).ToString();
                         var detailsId = $"LNbank-WithdrawConfig-Details-{withdrawConfig.WithdrawConfigId}";
                         <tr>
                             <td>@withdrawConfig.Name</td>
@@ -140,7 +141,29 @@
                         </tr>
                         <tr id="@detailsId" class="collapse">
                             <td colspan="5" class="border-top-0">
-                                <div>LNURL: @await Component.InvokeAsync("TruncateCenter", new { text = lnurl, classes = "truncate-center-id" })</div>
+                                <div class="payment-box mx-0 mb-4">
+                                    <div class="qr-container" data-clipboard="@lnurl">
+                                        @await Component.InvokeAsync("QRCode", new { data = lnurl.ToUpperInvariant() })
+                                    </div>
+                                    <div class="input-group mt-3">
+                                        <div class="form-floating">
+                                            <input id="@detailsId-LNURL-Bech32" class="form-control-plaintext" readonly="readonly" value="@lnurl">
+                                            <label for="@detailsId-LNURL-Bech32">LNURL (Bech32)</label>
+                                        </div>
+                                        <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-LNURL-Bech32">
+                                            @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                                        </button>
+                                    </div>
+                                    <div class="input-group mt-3">
+                                        <div class="form-floating">
+                                            <input id="@detailsId-LNURL-URI" class="form-control-plaintext" readonly="readonly" value="@lnurlUri">
+                                            <label for="@detailsId-LNURL-URI">LNURL (URI)</label>
+                                        </div>
+                                        <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-LNURL-URI">
+                                            @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                                        </button>
+                                    </div>
+                                </div>
                                 <div class="mt-3">
                                     <a asp-page-handler="remove" class="btn btn-sm btn-outline-danger" asp-route-withdrawConfigId="@withdrawConfig.WithdrawConfigId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-description="This action will remove the withdraw configuration <strong>@withdrawConfig.Name</strong> from this wallet." data-confirm-input="REMOVE">Remove Withdraw Config</a>
                                 </div>

@@ -40,7 +40,8 @@
         LNURL
     </dt>
     <dd class="col-sm-9 col-xl-10">
-        <a asp-page="./ShareLNURL" asp-route-walletId="@Model.CurrentWallet.WalletId" target="lnurl-@Model.CurrentWallet.WalletId">Receive</a>
+        <a asp-page="./ShareLNURL" asp-route-walletId="@Model.CurrentWallet.WalletId" target="lnurl-@Model.CurrentWallet.WalletId">Receive</a> /
+        <a asp-page="./WithdrawConfigs" asp-route-walletId="@Model.CurrentWallet.WalletId">Withdraw</a>
     </dd>
 </dl>
 
