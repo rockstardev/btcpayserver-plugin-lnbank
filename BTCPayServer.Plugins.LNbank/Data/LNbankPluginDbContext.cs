@@ -16,6 +16,7 @@ public class LNbankPluginDbContext : DbContext
     public DbSet<Wallet> Wallets { get; set; }
     public DbSet<AccessKey> AccessKeys { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
+    public DbSet<WithdrawConfig> WithdrawConfigs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,5 +26,6 @@ public class LNbankPluginDbContext : DbContext
         AccessKey.OnModelCreating(modelBuilder);
         Transaction.OnModelCreating(modelBuilder);
         Wallet.OnModelCreating(modelBuilder);
+        WithdrawConfig.OnModelCreating(modelBuilder);
     }
 }

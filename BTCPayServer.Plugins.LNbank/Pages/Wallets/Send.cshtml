@@ -53,7 +53,7 @@
                     <label asp-for="ExplicitAmount" class="form-label" data-required></label>
                     <div class="input-group">
                         <input asp-for="ExplicitAmount" class="form-control flex-grow-0 text-end hide-number-spin" type="number" aria-describedby="ExplicitAmount-Addon" max="@Model.CurrentWallet.Balance.ToUnit(LightMoneyUnit.Satoshi)" style="width:15ch;" autofocus required />
-                        <span class="input-group-text" id="ExplicitAmount-Addon">SATS</span>
+                        <span class="input-group-text" id="ExplicitAmount-Addon">sats</span>
                     </div>
                     <span asp-validation-for="ExplicitAmount" class="text-danger"></span>
                 </div>

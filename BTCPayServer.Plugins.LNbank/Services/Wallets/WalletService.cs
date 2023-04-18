@@ -92,18 +92,29 @@ public class WalletService
 
     public async Task<Transaction> Send(Wallet wallet, string paymentRequest)
     {
-        BOLT11PaymentRequest bolt11 = ParsePaymentRequest(paymentRequest);
+        var bolt11 = ParsePaymentRequest(paymentRequest);
         return await Send(wallet, bolt11, bolt11.ShortDescription);
     }
 
+    public async Task<Transaction> Send(WithdrawConfig withdrawConfig, string paymentRequest)
+    {
+        var bolt11 = ParsePaymentRequest(paymentRequest);
+        var remaining = withdrawConfig.GetRemainingBalance();
+
+        if (bolt11.MinimumAmount > remaining)
+            throw new PaymentRequestValidationException($"Payment request amount ({bolt11.MinimumAmount.ToUnit(LightMoneyUnit.Satoshi)} sats) was more than the remaining limit ({remaining.ToUnit(LightMoneyUnit.Satoshi)} sats)");
+
+        return await Send(withdrawConfig.Wallet, bolt11, bolt11.ShortDescription, withdrawConfigId: withdrawConfig.WithdrawConfigId);
+    }
+
     public async Task<Transaction> Send(Wallet wallet, BOLT11PaymentRequest bolt11, string? description,
-        LightMoney? explicitAmount = null, float maxFeePercent = 3, CancellationToken cancellationToken = default)
+        LightMoney? explicitAmount = null, string? withdrawConfigId = null, float maxFeePercent = 3, CancellationToken cancellationToken = default)
     {
         if (bolt11.ExpiryDate <= DateTimeOffset.UtcNow)
             throw new PaymentRequestValidationException($"Payment request already expired at {bolt11.ExpiryDate}.");
 
         // check balance
-        LightMoney? amount = bolt11.MinimumAmount == LightMoney.Zero ? explicitAmount : bolt11.MinimumAmount;
+        var amount = bolt11.MinimumAmount == LightMoney.Zero ? explicitAmount : bolt11.MinimumAmount;
         if (amount == null)
             throw new ArgumentException("Amount must be defined.", nameof(amount));
         if (wallet.Balance < amount)
@@ -123,7 +134,8 @@ public class WalletService
             ExpiresAt = bolt11.ExpiryDate,
             Description = description,
             Amount = amount,
-            AmountSettled = new LightMoney(amount.MilliSatoshi * -1)
+            AmountSettled = new LightMoney(amount.MilliSatoshi * -1),
+            WithdrawConfigId = withdrawConfigId
         };
 
         return await (isInternal && receivingTransaction != null
@@ -134,10 +146,10 @@ public class WalletService
     private async Task<Transaction> SendInternal(Transaction sendingTransaction, Transaction receivingTransaction,
         CancellationToken cancellationToken = default)
     {
-        Transaction transaction = sendingTransaction;
-        await using LNbankPluginDbContext? dbContext = _dbContextFactory.CreateContext();
-        IExecutionStrategy executionStrategy = dbContext.Database.CreateExecutionStrategy();
-        bool isSettled = false;
+        var transaction = sendingTransaction;
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var executionStrategy = dbContext.Database.CreateExecutionStrategy();
+        var isSettled = false;
 
         await executionStrategy.ExecuteAsync(async () =>
         {

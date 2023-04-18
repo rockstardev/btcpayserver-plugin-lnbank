@@ -90,7 +90,7 @@ public class LightningController : ControllerBase
             // load wallet including transactions to do the balance check
             var wallet = await GetWalletWithTransactions(Wallet.WalletId);
             var description = req.Description ?? bolt11.ShortDescription;
-            var transaction = await _walletService.Send(wallet, bolt11, description, amount);
+            var transaction = await _walletService.Send(wallet, bolt11, description, explicitAmount: amount);
             var details = transaction.IsSettled
                 ? new PayDetails
                 {

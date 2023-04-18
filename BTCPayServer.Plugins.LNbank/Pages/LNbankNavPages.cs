@@ -7,5 +7,6 @@ public enum LNbankNavPages
     Wallet,
     WalletSettings,
     WalletAccessKeys,
+    WalletWithdrawConfigs,
     Share
 }

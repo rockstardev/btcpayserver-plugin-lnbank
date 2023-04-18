@@ -1,17 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Extensions;
 using BTCPayServer.Client.Models;
 using BTCPayServer.Lightning;
+using BTCPayServer.Plugins.LNbank.Data.Models;
+using BTCPayServer.Plugins.LNbank.Services;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using LNURL;
 using Microsoft.AspNetCore.Mvc;
-using NBitcoin;
-using NBitcoin.Crypto;
 using Newtonsoft.Json;
-using Transaction = BTCPayServer.Plugins.LNbank.Data.Models.Transaction;
 
 namespace BTCPayServer.Plugins.LNbank.Controllers.API;
 
@@ -21,15 +19,17 @@ public class LnurlController : ControllerBase
 {
     private readonly WalletService _walletService;
     private readonly WalletRepository _walletRepository;
+    private readonly WithdrawConfigRepository _withdrawConfigRepository;
 
-    private static readonly LightMoney _minSendable = new(1, LightMoneyUnit.Satoshi);
-    private static readonly LightMoney _maxSendable = LightMoney.FromUnit(6.12m, LightMoneyUnit.BTC);
-    private int _commentLength = 615;
+    private static readonly LightMoney MinSendable = new(1, LightMoneyUnit.Satoshi);
+    private static readonly LightMoney MaxSendable = LightMoney.FromUnit(6.12m, LightMoneyUnit.BTC);
+    private const int CommentLength = 615;
 
-    public LnurlController(WalletService walletService, WalletRepository walletRepository)
+    public LnurlController(WalletService walletService, WalletRepository walletRepository, WithdrawConfigRepository withdrawConfigRepository)
     {
         _walletService = walletService;
         _walletRepository = walletRepository;
+        _withdrawConfigRepository = withdrawConfigRepository;
     }
 
     [HttpGet("{walletId}/pay")]
@@ -38,7 +38,7 @@ public class LnurlController : ControllerBase
         var wallet = await _walletRepository.GetWallet(new WalletsQuery { WalletId = new[] { walletId } });
         if (wallet == null)
         {
-            return this.CreateAPIError(404, "wallet-not-found", "The wallet was not found");
+            return BadRequest(GetError("The wallet was not found"));
         }
 
         var data = new List<string[]> { new[] { "text/plain", wallet.Name } };
@@ -55,7 +55,7 @@ public class LnurlController : ControllerBase
         var wallet = await _walletRepository.GetWallet(new WalletsQuery { WalletId = new[] { walletId } });
         if (wallet == null)
         {
-            return this.CreateAPIError(404, "wallet-not-found", "The wallet was not found");
+            return BadRequest(GetError("The wallet was not found"));
         }
 
         var data = new List<string[]> { new[] { "text/plain", wallet.Name } };
@@ -67,9 +67,9 @@ public class LnurlController : ControllerBase
             return Ok(payRequest);
         }
 
-        comment = comment?.Truncate(_commentLength);
+        comment = comment?.Truncate(CommentLength);
 
-        if (amount < _minSendable || amount > _maxSendable)
+        if (amount < MinSendable || amount > MaxSendable)
         {
             return BadRequest(GetError("Amount is out of bounds"));
         }
@@ -83,7 +83,7 @@ public class LnurlController : ControllerBase
                 DescriptionHashOnly = true,
                 Expiry = WalletService.ExpiryDefault
             };
-            Transaction transaction = await _walletService.Receive(wallet, req, comment);
+            var transaction = await _walletService.Receive(wallet, req, comment);
 
             var paymentRequest = transaction.PaymentRequest;
             if (_walletService.ValidateDescriptionHash(paymentRequest, meta))
@@ -103,7 +103,50 @@ public class LnurlController : ControllerBase
         }
     }
 
-    private LNUrlStatusResponse GetError(string reason) => new()
+    [HttpGet("{walletId}/withdraw/{withdrawConfigId}")]
+    public async Task<IActionResult> LnurlWithdraw(string walletId, string withdrawConfigId, string pr)
+    {
+        var withdrawConfig = await _withdrawConfigRepository.GetWithdrawConfig(new WithdrawConfigsQuery
+        {
+            WalletId = walletId,
+            WithdrawConfigId = withdrawConfigId,
+            IncludeTransactions = true
+        });
+        if (withdrawConfig == null)
+        {
+            return BadRequest(GetError($"The withdraw configuration was not found"));
+        }
+
+        var request = GetWithdrawRequest(withdrawConfig);
+        if (string.IsNullOrEmpty(pr))
+        {
+            return Ok(request);
+        }
+
+        try
+        {
+            var transaction = await _walletService.Send(withdrawConfig, pr);
+
+            switch (transaction.LightningPaymentStatus)
+            {
+                case LightningPaymentStatus.Unknown:
+                case LightningPaymentStatus.Pending:
+                    return Ok(new LNUrlStatusResponse { Status = "OK", Reason = $"The payment status is {transaction.Status}" });
+                case LightningPaymentStatus.Complete:
+                    return Ok(new LNUrlStatusResponse { Status = "OK" });
+                case LightningPaymentStatus.Failed:
+                    return BadRequest(GetError("Payment request could not be paid"));
+            }
+
+            return Ok(request);
+        }
+        catch (Exception exception)
+        {
+            return BadRequest(GetError($"Payment request could not be paid: {exception.Message}"));
+        }
+    }
+
+    private static LNUrlStatusResponse GetError(string reason) => new()
     {
         Status = "ERROR",
         Reason = reason
@@ -111,11 +154,30 @@ public class LnurlController : ControllerBase
 
     private LNURLPayRequest GetPayRequest(string walletId, string metadata) => new()
     {
-        Tag = "payRequest",
+        Tag = LNURLService.PayRequestTag,
         Callback = new Uri($"{Request.Scheme}://{Request.Host.ToUriComponent()}{Request.PathBase.ToUriComponent()}/api/v1/lnbank/lnurl/{walletId}/pay-callback"),
-        MinSendable = _minSendable,
-        MaxSendable = _maxSendable,
-        CommentAllowed = _commentLength,
+        MinSendable = MinSendable,
+        MaxSendable = MaxSendable,
+        CommentAllowed = CommentLength,
         Metadata = metadata
     };
+
+    private LNURLWithdrawRequest GetWithdrawRequest(WithdrawConfig withdrawConfig)
+    {
+        var remaining = withdrawConfig.GetRemainingBalance();
+        var oneSat = LightMoney.Satoshis(1);
+        var thisUri = new Uri(Request.GetCurrentUrl());
+        var request = new LNURLWithdrawRequest
+        {
+            Tag = LNURLService.WithdrawRequestTag,
+            K1 = withdrawConfig.WithdrawConfigId,
+            DefaultDescription = withdrawConfig.Name,
+            MinWithdrawable = remaining > oneSat ? oneSat : LightMoney.Zero,
+            MaxWithdrawable = remaining,
+            CurrentBalance = remaining,
+            BalanceCheck = thisUri,
+            Callback = thisUri
+        };
+        return request;
+    }
 }

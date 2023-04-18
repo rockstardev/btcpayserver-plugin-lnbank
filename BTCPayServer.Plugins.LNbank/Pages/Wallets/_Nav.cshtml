@@ -4,5 +4,6 @@
     <div class="nav">
         <a id="SectionNav-@(nameof(LNbankNavPages.WalletSettings))" class="nav-link @ViewData.IsActivePage(LNbankNavPages.WalletSettings, Model.WalletId)" asp-page="/Wallets/Details" asp-route-walletId="@Model.WalletId">General</a>
         <a id="SectionNav-@(nameof(LNbankNavPages.WalletAccessKeys))" class="nav-link @ViewData.IsActivePage(LNbankNavPages.WalletAccessKeys, Model.WalletId)" asp-page="/Wallets/AccessKeys" asp-route-walletId="@Model.WalletId">Access Keys</a>
+        <a id="SectionNav-@(nameof(LNbankNavPages.WalletWithdrawConfigs))" class="nav-link @ViewData.IsActivePage(LNbankNavPages.WalletWithdrawConfigs, Model.WalletId)" asp-page="/Wallets/WithdrawConfigs" asp-route-walletId="@Model.WalletId">Withdraw Configurations</a>
     </div>
 </nav>

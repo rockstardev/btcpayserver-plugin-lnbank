@@ -214,6 +214,15 @@ public class WalletRepository
         return queryable.FirstOrDefault();
     }
 
+    public async Task LoadTransactionWithdrawConfig(Transaction transaction)
+    {
+        if (!string.IsNullOrEmpty(transaction.WithdrawConfigId))
+        {
+            await using var dbContext = _dbContextFactory.CreateContext();
+            await dbContext.Entry(transaction).Reference(t => t.WithdrawConfig).LoadAsync();
+        }
+    }
+
     public async Task<Transaction> UpdateTransaction(Transaction transaction)
     {
         await using var dbContext = _dbContextFactory.CreateContext();

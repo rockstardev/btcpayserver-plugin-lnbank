@@ -15,13 +15,20 @@ namespace BTCPayServer.Plugins.LNbank.Pages.Transactions;
 public class DetailsModel : BasePageModel
 {
     public Transaction Transaction { get; set; }
+    public WithdrawConfig WithdrawConfig { get; set; }
+
+    private readonly WithdrawConfigRepository _withdrawConfigRepository;
 
     public DetailsModel(
         UserManager<ApplicationUser> userManager,
         WalletRepository walletRepository,
-        WalletService walletService) : base(userManager, walletRepository, walletService) { }
+        WalletService walletService,
+        WithdrawConfigRepository withdrawConfigRepository) : base(userManager, walletRepository, walletService)
+    {
+        _withdrawConfigRepository = withdrawConfigRepository;
+    }
 
-    public IActionResult OnGetAsync(string walletId, string transactionId)
+    public async Task<IActionResult> OnGetAsync(string walletId, string transactionId)
     {
         if (CurrentWallet == null)
             return NotFound();
@@ -29,6 +36,13 @@ public class DetailsModel : BasePageModel
         Transaction = CurrentWallet.Transactions.FirstOrDefault(t => t.TransactionId == transactionId);
         if (Transaction == null)
             return NotFound();
+
+        if (!string.IsNullOrEmpty(Transaction.WithdrawConfigId))
+            WithdrawConfig = await _withdrawConfigRepository.GetWithdrawConfig(new WithdrawConfigsQuery
+            {
+                WalletId = walletId,
+                WithdrawConfigId = Transaction.WithdrawConfigId
+            });
 
         return Page();
     }

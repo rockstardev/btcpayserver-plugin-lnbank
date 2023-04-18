@@ -16,7 +16,9 @@ public class LNURLService
     // see LightningClientFactoryService
     private const string HttpHandlerOnionNamedClient = "lightning.onion";
     private const string HttpHandlerClearnetNamedClient = "lightning.clearnet";
-    private const string LnurlPayRequestTag = "payRequest";
+
+    internal const string PayRequestTag = "payRequest";
+    internal const string WithdrawRequestTag = "withdrawRequest";
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly bool _isDevEnv;
@@ -36,42 +38,40 @@ public class LNURLService
 
     public async Task<LNURLPayRequest> GetPaymentRequest(string destination)
     {
-        (Uri lnurl, string? lnurlTag) = GetLNURL(destination);
+        var (lnurl, lnurlTag) = GetLNURL(destination);
         return await ResolveLNURL(lnurl, lnurlTag, destination);
     }
 
     public async Task<BOLT11PaymentRequest> GetBolt11(LNURLPayRequest payRequest, LightMoney? amount = null,
         string? comment = null)
     {
-        if (payRequest.Tag != LnurlPayRequestTag)
+        if (payRequest.Tag != PayRequestTag)
             throw new PaymentRequestValidationException(
-                $"Expected LNURL \"{LnurlPayRequestTag}\" type, got \"{payRequest.Tag}\".");
+                $"Expected LNURL \"{PayRequestTag}\" type, got \"{payRequest.Tag}\".");
 
-        HttpClient httpClient = CreateClient(payRequest.Callback);
-        LNURLPayRequest.LNURLPayRequestCallbackResponse? payResponse =
-            await payRequest.SendRequest(amount ?? payRequest.MinSendable, _network, httpClient, comment);
-        BOLT11PaymentRequest? bolt11 = payResponse.GetPaymentRequest(_network);
+        var httpClient = CreateClient(payRequest.Callback);
+        var payResponse = await payRequest.SendRequest(amount ?? payRequest.MinSendable, _network, httpClient, comment);
+        var bolt11 = payResponse.GetPaymentRequest(_network);
 
         return bolt11;
     }
 
     private async Task<LNURLPayRequest> ResolveLNURL(Uri lnurl, string? lnurlTag, string destination)
     {
-        string type = IsLightningAddress(destination) ? "Lightning Address" : "LNURL";
+        var type = IsLightningAddress(destination) ? "Lightning Address" : "LNURL";
         try
         {
             if (lnurlTag is null)
             {
-                HttpClient httpClient = CreateClient(lnurl);
-                LNURLPayRequest? info = (LNURLPayRequest)await LNURL.LNURL.FetchInformation(lnurl, httpClient);
+                var httpClient = CreateClient(lnurl);
+                var info = (LNURLPayRequest)await LNURL.LNURL.FetchInformation(lnurl, httpClient);
                 lnurlTag = info.Tag;
             }
 
-            if (lnurlTag.Equals(LnurlPayRequestTag, StringComparison.InvariantCultureIgnoreCase))
+            if (lnurlTag.Equals(PayRequestTag, StringComparison.InvariantCultureIgnoreCase))
             {
-                HttpClient httpClient = CreateClient(lnurl);
-                LNURLPayRequest? payRequest =
-                    (LNURLPayRequest)await LNURL.LNURL.FetchInformation(lnurl, lnurlTag, httpClient);
+                var httpClient = CreateClient(lnurl);
+                var payRequest = (LNURLPayRequest)await LNURL.LNURL.FetchInformation(lnurl, lnurlTag, httpClient);
                 return payRequest;
             }
         }
@@ -93,7 +93,7 @@ public class LNURLService
     {
         Uri lnurl;
         string? lnurlTag = null;
-        bool isLnAddress = IsLightningAddress(destination);
+        var isLnAddress = IsLightningAddress(destination);
         try
         {
             lnurl = isLnAddress
@@ -102,7 +102,7 @@ public class LNURLService
         }
         catch (Exception ex)
         {
-            string type = isLnAddress ? "Lightning Address" : "LNURL";
+            var type = isLnAddress ? "Lightning Address" : "LNURL";
             throw new ResolveLNURLException(destination, $"Parsing {type} failed: {ex.Message}");
         }
 
@@ -116,10 +116,9 @@ public class LNURLService
         if (_isDevEnv)
             return email.Contains('@');
 
-        ParserOptions? options = ParserOptions.Default.Clone();
+        var options = ParserOptions.Default.Clone();
         options.AllowAddressesWithoutDomain = false;
-        return MailboxAddress.TryParse(options, email, out MailboxAddress? mailboxAddress) &&
-               mailboxAddress is not null;
+        return MailboxAddress.TryParse(options, email, out var mailboxAddress) && mailboxAddress is not null;
     }
 
     private HttpClient CreateClient(Uri uri)

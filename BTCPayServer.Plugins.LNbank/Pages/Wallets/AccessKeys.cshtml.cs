@@ -86,7 +86,7 @@ public class AccessKeysModel : BasePageModel
         }
         catch (Exception)
         {
-            TempData[WellKnownTempData.ErrorMessage] = "Failed to remove user.";
+            TempData[WellKnownTempData.ErrorMessage] = "Failed to remove access key.";
         }
 
         AccessKeys = await GetAccessKeyVMs(CurrentWallet.AccessKeys);

@@ -15,6 +15,7 @@ public static class AppExtensions
         services.AddSingleton<LNURLService>();
         services.AddSingleton<WalletService>();
         services.AddSingleton<WalletRepository>();
+        services.AddSingleton<WithdrawConfigRepository>();
         services.AddSingleton<ISwaggerProvider, LNbankSwaggerProvider>();
     }
 }

@@ -21,7 +21,7 @@
 @foreach (var wallet in wallets)
 {
     <li class="nav-item nav-item-sub" style="padding-left:calc(1.5rem + var(--btcpay-space-xs))">
-        <a href="~/plugins/lnbank/wallets/@wallet.WalletId" class="nav-link @ViewData.IsActivePage(LNbankNavPages.Wallet, wallet.WalletId) @ViewData.IsActivePage(LNbankNavPages.WalletSettings, wallet.WalletId) @ViewData.IsActivePage(LNbankNavPages.WalletAccessKeys, wallet.WalletId)" id="Nav-LNbank-Wallet-@wallet.WalletId">
+        <a href="~/plugins/lnbank/wallets/@wallet.WalletId" class="nav-link @ViewData.IsActivePage(LNbankNavPages.Wallet, wallet.WalletId) @ViewData.IsActivePage(LNbankNavPages.WalletSettings, wallet.WalletId) @ViewData.IsActivePage(LNbankNavPages.WalletAccessKeys, wallet.WalletId) @ViewData.IsActivePage(LNbankNavPages.WalletWithdrawConfigs, wallet.WalletId)" id="Nav-LNbank-Wallet-@wallet.WalletId">
             <span>@wallet.Name</span>
         </a>
     </li>

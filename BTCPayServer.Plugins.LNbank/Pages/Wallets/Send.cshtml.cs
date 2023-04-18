@@ -169,7 +169,7 @@ public class SendModel : BasePageModel
         try
         {
             var explicitAmount = ExplicitAmount.HasValue ? LightMoney.Satoshis(ExplicitAmount.Value) : null;
-            var transaction = await WalletService.Send(CurrentWallet, Bolt11, Description, explicitAmount);
+            var transaction = await WalletService.Send(CurrentWallet, Bolt11, Description, explicitAmount: explicitAmount);
             TempData[WellKnownTempData.SuccessMessage] = transaction.IsPending
                 ? "Payment successfully sent, awaiting settlement."
                 : "Payment successfully sent and settled.";

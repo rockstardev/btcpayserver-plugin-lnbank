@@ -39,6 +39,8 @@ public class Wallet
     [NotMapped]
     public AccessLevel AccessLevel { get; set; }
 
+    public ICollection<WithdrawConfig> WithdrawConfigs { get; set; } = new List<WithdrawConfig>();
+
     public bool IsSoftDeleted { get; set; }
 
     [DisplayName("Add routing hints for private channels by default")]

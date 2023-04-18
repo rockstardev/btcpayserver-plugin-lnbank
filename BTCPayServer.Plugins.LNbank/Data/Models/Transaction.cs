@@ -14,6 +14,9 @@ public class Transaction
     public string InvoiceId { get; set; }
     public string WalletId { get; set; }
 
+    [DisplayName("Withdraw configuration")]
+    public string WithdrawConfigId { get; set; }
+
     [Required]
     public LightMoney Amount { get; set; }
     [DisplayName("Settled amount")]
@@ -38,6 +41,7 @@ public class Transaction
     [DisplayName("Payment date")]
     public DateTimeOffset? PaidAt { get; set; }
     public Wallet Wallet { get; set; }
+    public WithdrawConfig WithdrawConfig { get; set; }
     public string ExplicitStatus { get; set; }
 
     public const string StatusSettled = "settled";
@@ -180,6 +184,10 @@ public class Transaction
         builder
             .Entity<Transaction>()
             .HasIndex(o => o.WalletId);
+
+        builder
+            .Entity<Transaction>()
+            .HasIndex(o => o.WithdrawConfigId);
 
         builder
             .Entity<Transaction>()
