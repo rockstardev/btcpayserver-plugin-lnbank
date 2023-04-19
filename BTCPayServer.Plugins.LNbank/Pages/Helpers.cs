@@ -8,7 +8,9 @@ public static class Helpers
 {
     public static string Sats(LightMoney amount)
     {
-        return $"{Math.Floor(amount.ToUnit(LightMoneyUnit.Satoshi))} sats";
+        return amount >= LightMoney.Satoshis(1)
+            ? $"{Math.Floor(amount.ToUnit(LightMoneyUnit.Satoshi))} sats"
+            : Millisats(amount);
     }
 
     public static string Millisats(LightMoney amount)

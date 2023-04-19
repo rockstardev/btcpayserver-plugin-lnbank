@@ -52,14 +52,14 @@ public class WalletService
 
     public async Task<bool> IsPaid(string paymentHash)
     {
-        Transaction? transaction = await _walletRepository.GetTransaction(new TransactionQuery
+        var transaction = await _walletRepository.GetTransaction(new TransactionQuery
         {
             PaymentHash = paymentHash
         });
         if (transaction != null)
             return transaction.IsPaid;
 
-        LightningPaymentData? payment = await _btcpayService.GetLightningPayment(paymentHash);
+        var payment = await _btcpayService.GetLightningPayment(paymentHash);
         return payment?.Status == LightningPaymentStatus.Complete;
     }
 
@@ -69,11 +69,11 @@ public class WalletService
         if (req.Amount < 0)
             throw new ArgumentException("Amount should be a non-negative value", nameof(req.Amount));
 
-        LightningInvoiceData? data = await _btcpayService.CreateLightningInvoice(req);
+        var data = await _btcpayService.CreateLightningInvoice(req);
 
-        await using LNbankPluginDbContext? dbContext = _dbContextFactory.CreateContext();
-        BOLT11PaymentRequest bolt11 = ParsePaymentRequest(data.BOLT11);
-        EntityEntry<Transaction> entry = await dbContext.Transactions.AddAsync(
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var bolt11 = ParsePaymentRequest(data.BOLT11);
+        var entry = await dbContext.Transactions.AddAsync(
             new Transaction
             {
                 WalletId = wallet.WalletId,
@@ -157,11 +157,10 @@ public class WalletService
                 await dbContext.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                DateTimeOffset now = DateTimeOffset.UtcNow;
+                var now = DateTimeOffset.UtcNow;
 
-                EntityEntry<Transaction> receiveEntry = dbContext.Entry(receivingTransaction);
-                EntityEntry<Transaction> sendingEntry =
-                    await dbContext.Transactions.AddAsync(sendingTransaction, cancellationToken);
+                var receiveEntry = dbContext.Entry(receivingTransaction);
+                var sendingEntry = await dbContext.Transactions.AddAsync(sendingTransaction, cancellationToken);
 
                 sendingEntry.Entity.SetSettled(sendingTransaction.Amount, sendingTransaction.AmountSettled, null, now, null);
                 receiveEntry.Entity.SetSettled(sendingTransaction.Amount, sendingTransaction.Amount, null, now, null);
@@ -199,22 +198,20 @@ public class WalletService
         LightMoney walletBalance, float maxFeePercent, CancellationToken cancellationToken = default)
     {
         // Account for fees
-        LightMoney? maxFeeAmount =
-            LightMoney.Satoshis(amount.ToUnit(LightMoneyUnit.Satoshi) * (decimal)maxFeePercent / 100);
-        LightMoney? amountWithFee = amount + maxFeeAmount;
+        var maxFeeAmount = LightMoney.Satoshis(amount.ToUnit(LightMoneyUnit.Satoshi) * (decimal)maxFeePercent / 100);
+        var amountWithFee = amount + maxFeeAmount;
         if (walletBalance < amountWithFee)
             throw new InsufficientBalanceException(
                 $"Insufficient balance: {Sats(walletBalance)} — tried to send {Sats(amount)} and need to keep a fee reserve of {Millisats(maxFeeAmount)}.");
 
-        await using LNbankPluginDbContext? dbContext = _dbContextFactory.CreateContext();
+        await using var dbContext = _dbContextFactory.CreateContext();
 
         // Create preliminary transaction entry - if something fails afterwards, the LightningInvoiceWatcher will handle cleanup
         sendingTransaction.Amount = amount;
         sendingTransaction.AmountSettled = new LightMoney(amountWithFee.MilliSatoshi * -1);
         sendingTransaction.RoutingFee = maxFeeAmount;
         sendingTransaction.ExplicitStatus = Transaction.StatusPending;
-        EntityEntry<Transaction> sendingEntry =
-            await dbContext.Transactions.AddAsync(sendingTransaction, cancellationToken);
+        var sendingEntry = await dbContext.Transactions.AddAsync(sendingTransaction, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         try
@@ -229,7 +226,7 @@ public class WalletService
                 SendTimeout = SendTimeout
             };
 
-            LightningPaymentData? result = await _btcpayService.PayLightningInvoice(request, cancellationToken);
+            var result = await _btcpayService.PayLightningInvoice(request, cancellationToken);
 
             // Check result
             if (result.TotalAmount == null)
@@ -237,7 +234,7 @@ public class WalletService
 
             // Set amounts according to actual amounts paid, including fees
             LightMoney settledAmount = new (result.TotalAmount * -1);
-            LightMoney? originalAmount = result.TotalAmount - result.FeeAmount;
+            var originalAmount = result.TotalAmount - result.FeeAmount;
 
             await Settle(sendingEntry.Entity, originalAmount, settledAmount, result.FeeAmount, DateTimeOffset.UtcNow, result.Preimage);
         }
@@ -274,7 +271,7 @@ public class WalletService
 
     public async Task<Transaction?> ValidatePaymentRequest(string paymentRequest)
     {
-        Transaction transaction = await _walletRepository.GetTransaction(new TransactionQuery
+        var transaction = await _walletRepository.GetTransaction(new TransactionQuery
         {
             PaymentRequest = paymentRequest
         });
@@ -303,18 +300,18 @@ public class WalletService
 
     public async Task<(BOLT11PaymentRequest? bolt11, LNURLPayRequest? lnurlPay)> GetPaymentRequests(string destination)
     {
-        int index = destination.IndexOf("lightning=", StringComparison.InvariantCultureIgnoreCase);
-        string dest = index == -1
+        var index = destination.IndexOf("lightning=", StringComparison.InvariantCultureIgnoreCase);
+        var dest = index == -1
             ? destination.Replace("lightning:", "", StringComparison.InvariantCultureIgnoreCase)
             : destination.Substring(index + 10);
         try
         {
-            BOLT11PaymentRequest bolt11 = ParsePaymentRequest(dest);
+            var bolt11 = ParsePaymentRequest(dest);
             return (bolt11, null);
         }
         catch (Exception)
         {
-            LNURLPayRequest lnurlPay = await _lnurlService.GetPaymentRequest(dest);
+            var lnurlPay = await _lnurlService.GetPaymentRequest(dest);
             return (null, lnurlPay);
         }
     }
@@ -328,8 +325,8 @@ public class WalletService
 
     public async Task<bool> Expire(Transaction transaction)
     {
-        string? status = transaction.Status;
-        bool result = transaction.SetExpired();
+        var status = transaction.Status;
+        var result = transaction.SetExpired();
         if (result)
         {
             await _walletRepository.UpdateTransaction(transaction);
@@ -347,8 +344,8 @@ public class WalletService
 
     public async Task<bool> Cancel(Transaction transaction)
     {
-        string? status = transaction.Status;
-        bool result = transaction.SetCancelled();
+        var status = transaction.Status;
+        var result = transaction.SetCancelled();
         if (result)
         {
             await _walletRepository.UpdateTransaction(transaction);
@@ -366,8 +363,8 @@ public class WalletService
 
     public async Task<bool> Invalidate(Transaction transaction)
     {
-        string? status = transaction.Status;
-        bool result = transaction.SetInvalid();
+        var status = transaction.Status;
+        var result = transaction.SetInvalid();
         if (result)
         {
             await _walletRepository.UpdateTransaction(transaction);
@@ -385,8 +382,8 @@ public class WalletService
 
     public async Task<bool> Revalidate(Transaction transaction)
     {
-        string? status = transaction.Status;
-        bool result = transaction.QueueForRevalidation();
+        var status = transaction.Status;
+        var result = transaction.QueueForRevalidation();
         if (result)
         {
             await _walletRepository.UpdateTransaction(transaction);
@@ -405,8 +402,8 @@ public class WalletService
     public async Task<bool> Settle(Transaction transaction, LightMoney amount, LightMoney amountSettled,
         LightMoney routingFee, DateTimeOffset date, string preimage)
     {
-        string? status = transaction.Status;
-        bool result = transaction.SetSettled(amount, amountSettled, routingFee, date, preimage);
+        var status = transaction.Status;
+        var result = transaction.SetSettled(amount, amountSettled, routingFee, date, preimage);
         if (result)
         {
             await _walletRepository.UpdateTransaction(transaction);

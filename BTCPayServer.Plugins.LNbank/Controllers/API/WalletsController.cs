@@ -4,12 +4,15 @@ using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Constants;
 using BTCPayServer.Abstractions.Extensions;
 using BTCPayServer.Client;
+using BTCPayServer.Client.Models;
 using BTCPayServer.Data;
+using BTCPayServer.Lightning;
 using BTCPayServer.Plugins.LNbank.Authentication;
 using BTCPayServer.Plugins.LNbank.Data.API;
 using BTCPayServer.Plugins.LNbank.Data.Models;
 using BTCPayServer.Plugins.LNbank.Services;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
+using LNURL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -22,17 +25,20 @@ namespace BTCPayServer.Plugins.LNbank.Controllers.API;
 [Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield)]
 public class WalletsController : ControllerBase
 {
+    private readonly LNURLService _lnurlService;
+    private readonly WalletService _walletService;
     private readonly WalletRepository _walletRepository;
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly LNURLService _lnurlService;
 
     public WalletsController(
         UserManager<ApplicationUser> userManager,
         WalletRepository walletRepository,
+        WalletService walletService,
         LNURLService lnurlService)
     {
         _userManager = userManager;
         _walletRepository = walletRepository;
+        _walletService = walletService;
         _lnurlService = lnurlService;
     }
 
@@ -129,6 +135,91 @@ public class WalletsController : ControllerBase
         }
     }
 
+    [HttpPost("{walletId}/receive")]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield, Policy = LNbankPolicies.CanCreateInvoices)]
+    public async Task<IActionResult> Receive(string walletId, ReceiveRequest receive)
+    {
+        var wallet = await FetchWallet(walletId);
+        if (wallet == null)
+            return this.CreateAPIError(404, "wallet-not-found", "The wallet was not found");
+
+        try
+        {
+            var memo = !string.IsNullOrEmpty(receive.Description) ? receive.Description : null;
+            var expiry = receive.Expiry is > 0 ? TimeSpan.FromMinutes(receive.Expiry.Value) : WalletService.ExpiryDefault;
+            var req = new CreateLightningInvoiceRequest
+            {
+                Amount = receive.Amount,
+                Expiry = expiry,
+                Description = receive.AttachDescription && !string.IsNullOrEmpty(memo) ? memo : null,
+                PrivateRouteHints = receive.PrivateRouteHints ?? wallet.PrivateRouteHintsByDefault
+            };
+
+            var transaction = await _walletService.Receive(wallet, req, memo);
+            return Ok(FromModel(transaction));
+        }
+        catch (Exception exception)
+        {
+            return this.CreateAPIError("generic-error", $"Invoice creation failed: {exception.Message}");
+        }
+    }
+
+    [HttpPost("{walletId}/send")]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield, Policy = LNbankPolicies.CanSendMoney)]
+    public async Task<IActionResult> Send(string walletId, SendRequest send)
+    {
+        var wallet = await FetchWallet(walletId);
+        if (wallet == null)
+            return this.CreateAPIError(404, "wallet-not-found", "The wallet was not found");
+
+        BOLT11PaymentRequest bolt11;
+        try
+        {
+            (bolt11, var lnurlPay) = await _walletService.GetPaymentRequests(send.Destination);
+
+            if (bolt11 == null)
+            {
+                var isDefinedAmount = lnurlPay.MinSendable == lnurlPay.MaxSendable;
+                var amount = isDefinedAmount ? lnurlPay.MinSendable : send.ExplicitAmount;
+
+                if (amount == null)
+                {
+                    ModelState.AddModelError(nameof(send.ExplicitAmount), "Amount must be defined");
+                }
+                else
+                {
+                    bolt11 = await _walletService.GetBolt11(lnurlPay, amount, send.Comment);
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            return this.CreateAPIError("generic-error", $"Payment failed: {exception.Message}");
+        }
+
+        // Abort if there's still no payment request - from here on we require a BOLT11
+        if (bolt11 == null)
+        {
+            ModelState.AddModelError(nameof(send.Destination), "Could not resolve a valid payment request from destination");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return this.CreateValidationError(ModelState);
+        }
+
+        try
+        {
+            var transaction = await _walletService.Send(wallet, bolt11!, send.Description, explicitAmount: send.ExplicitAmount);
+            var data = FromModel(transaction);
+            return transaction.IsPending ? Accepted(data) : Ok(data);
+        }
+        catch (Exception exception)
+        {
+            return this.CreateAPIError("generic-error", $"Payment failed: {exception.Message}");
+        }
+    }
+
     private async Task<Wallet> FetchWallet(string walletId)
     {
         return await _walletRepository.GetWallet(new WalletsQuery
@@ -165,6 +256,26 @@ public class WalletsController : ControllerBase
             AccessKey = model.AccessKeys.FirstOrDefault(ak => ak.UserId == GetUserId())?.Key,
             LnurlPayBech32 = _lnurlService.GetLNURLPayForWallet(Request, model.WalletId, true),
             LnurlPayUri = _lnurlService.GetLNURLPayForWallet(Request, model.WalletId, false)
+        };
+
+    private TransactionData FromModel(Transaction model) =>
+        new()
+        {
+            Id = model.TransactionId,
+            WalletId = model.WalletId,
+            InvoiceId = model.InvoiceId,
+            WithdrawConfigId = model.WithdrawConfigId,
+            Description = model.Description,
+            PaymentRequest = model.PaymentRequest,
+            PaymentHash = model.PaymentHash,
+            Preimage = model.Preimage,
+            Status = model.Status,
+            Amount = model.Amount,
+            AmountSettled = model.AmountSettled,
+            RoutingFee = model.RoutingFee,
+            CreatedAt = model.CreatedAt,
+            ExpiresAt = model.ExpiresAt,
+            PaidAt = model.PaidAt
         };
 
     private string GetUserId() => _userManager.GetUserId(User);
