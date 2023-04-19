@@ -8,6 +8,7 @@ using BTCPayServer.Data;
 using BTCPayServer.Plugins.LNbank.Authentication;
 using BTCPayServer.Plugins.LNbank.Data.API;
 using BTCPayServer.Plugins.LNbank.Data.Models;
+using BTCPayServer.Plugins.LNbank.Services;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -23,11 +24,16 @@ public class WalletsController : ControllerBase
 {
     private readonly WalletRepository _walletRepository;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly LNURLService _lnurlService;
 
-    public WalletsController(UserManager<ApplicationUser> userManager, WalletRepository walletRepository)
+    public WalletsController(
+        UserManager<ApplicationUser> userManager,
+        WalletRepository walletRepository,
+        LNURLService lnurlService)
     {
         _userManager = userManager;
         _walletRepository = walletRepository;
+        _lnurlService = lnurlService;
     }
 
     [HttpGet("")]
@@ -156,7 +162,9 @@ public class WalletsController : ControllerBase
             Name = model.Name,
             CreatedAt = model.CreatedAt,
             Balance = model.Balance,
-            AccessKey = model.AccessKeys.FirstOrDefault(ak => ak.UserId == GetUserId())?.Key
+            AccessKey = model.AccessKeys.FirstOrDefault(ak => ak.UserId == GetUserId())?.Key,
+            LnurlPayBech32 = _lnurlService.GetLNURLPayForWallet(Request, model.WalletId, true),
+            LnurlPayUri = _lnurlService.GetLNURLPayForWallet(Request, model.WalletId, false)
         };
 
     private string GetUserId() => _userManager.GetUserId(User);

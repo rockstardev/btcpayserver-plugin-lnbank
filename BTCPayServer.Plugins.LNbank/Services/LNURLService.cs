@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BTCPayServer.Lightning;
 using BTCPayServer.Plugins.LNbank.Exceptions;
 using LNURL;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using MimeKit;
 using NBitcoin;
@@ -54,6 +55,12 @@ public class LNURLService
         var bolt11 = payResponse.GetPaymentRequest(_network);
 
         return bolt11;
+    }
+
+    public string GetLNURLPayForWallet(HttpRequest req, string walletId, bool bech32)
+    {
+        var endpoint = new Uri($"{req.Scheme}://{req.Host}{req.PathBase.ToUriComponent()}/api/v1/lnbank/lnurl/{walletId}/pay");
+        return LNURL.LNURL.EncodeUri(endpoint, "payRequest", bech32).ToString().Replace("lightning:", "");
     }
 
     private async Task<LNURLPayRequest> ResolveLNURL(Uri lnurl, string? lnurlTag, string destination)
