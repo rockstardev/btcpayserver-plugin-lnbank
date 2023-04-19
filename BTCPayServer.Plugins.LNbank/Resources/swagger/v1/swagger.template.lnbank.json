@@ -384,6 +384,107 @@
           }
         ]
       }
+    },
+    "/api/v1/lnbank/wallets/{walletId}/transactions": {
+      "get": {
+        "tags": [
+          "LNbank"
+        ],
+        "summary": "Get transactions",
+        "description": "View information about the wallet transactions",
+        "operationId": "LNbankTransactions_GetTransactions",
+        "parameters": [
+          {
+            "name": "walletId",
+            "in": "path",
+            "required": true,
+            "description": "The wallet to fetch",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of transactions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LNbankTransactionDataList"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "If you are authenticated but forbidden to view the specified wallet"
+          },
+          "404": {
+            "description": "The key is not found for this wallet or transaction"
+          }
+        },
+        "security": [
+          {
+            "API_Key": [
+              "btcpay.plugin.lnbank.canviewwallet"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/v1/lnbank/wallets/{walletId}/transactions/{transactionId}": {
+      "get": {
+        "tags": [
+          "LNbank"
+        ],
+        "summary": "Get transaction",
+        "parameters": [
+          {
+            "name": "walletId",
+            "in": "path",
+            "required": true,
+            "description": "The wallet to fetch",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "transactionId",
+            "in": "path",
+            "required": true,
+            "description": "The transaction to fetch",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "View information about the specified transaction",
+        "operationId": "LNbankTransactions_GetTransaction",
+        "responses": {
+          "200": {
+            "description": "Specified transaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LNbankTransactionData"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "If you are authenticated but forbidden to view the specified wallet or transaction"
+          },
+          "404": {
+            "description": "The key is not found for this wallet or transaction"
+          }
+        },
+        "security": [
+          {
+            "API_Key": [
+              "btcpay.plugin.lnbank.canviewwallet"
+            ]
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -496,6 +597,12 @@
             "description": "URI representation of LNURL for pay requests",
             "example": "lnurlp://example.com/api/v1/lnbank/lnurl/26605761-8ad2-4391-821a-40ee9929bf77/pay"
           }
+        }
+      },
+      "LNbankTransactionDataList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/LNbankTransactionData"
         }
       },
       "LNbankTransactionData": {

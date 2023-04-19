@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Configure LNURL withdraw access per wallet. (#18)
 - API: Add send and receive endpoints.
+- API: Add transactions endpoints.
 - API: Add LNURL-Pay to wallet data.
 
 ## [1.4.2]

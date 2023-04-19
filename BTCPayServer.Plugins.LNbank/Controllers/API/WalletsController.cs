@@ -12,7 +12,6 @@ using BTCPayServer.Plugins.LNbank.Data.API;
 using BTCPayServer.Plugins.LNbank.Data.Models;
 using BTCPayServer.Plugins.LNbank.Services;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
-using LNURL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -218,6 +217,30 @@ public class WalletsController : ControllerBase
         {
             return this.CreateAPIError("generic-error", $"Payment failed: {exception.Message}");
         }
+    }
+
+    [HttpGet("{walletId}/transactions")]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield, Policy = LNbankPolicies.CanViewWallet)]
+    public async Task<IActionResult> GetTransactions(string walletId)
+    {
+        var wallet = await FetchWallet(walletId);
+        return wallet == null
+            ? this.CreateAPIError(404, "wallet-not-found", "The wallet was not found")
+            : Ok(wallet.Transactions.Select(FromModel));
+    }
+
+    [HttpGet("{walletId}/transactions/{transactionId}")]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield, Policy = LNbankPolicies.CanViewWallet)]
+    public async Task<IActionResult> GetTransaction(string walletId, string transactionId)
+    {
+        var wallet = await FetchWallet(walletId);
+        if (wallet == null)
+            return this.CreateAPIError(404, "wallet-not-found", "The wallet was not found");
+
+        var transaction = wallet.Transactions.FirstOrDefault(t => t.TransactionId == transactionId);
+        return transaction == null
+            ? this.CreateAPIError(404, "transaction-not-found", "The transaction was not found")
+            : Ok(FromModel(transaction));
     }
 
     private async Task<Wallet> FetchWallet(string walletId)
