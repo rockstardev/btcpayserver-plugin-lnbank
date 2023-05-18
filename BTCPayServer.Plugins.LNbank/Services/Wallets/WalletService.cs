@@ -198,11 +198,23 @@ public class WalletService
         LightMoney walletBalance, float maxFeePercent, CancellationToken cancellationToken = default)
     {
         // Account for fees
-        var maxFeeAmount = LightMoney.Satoshis(amount.ToUnit(LightMoneyUnit.Satoshi) * (decimal)maxFeePercent / 100);
+        var amountInSats = amount.ToUnit(LightMoneyUnit.Satoshi);
+        var maxFeeAmount = LightMoney.Satoshis(amountInSats * (decimal)maxFeePercent / 100);
         var amountWithFee = amount + maxFeeAmount;
         if (walletBalance < amountWithFee)
-            throw new InsufficientBalanceException(
-                $"Insufficient balance: {Sats(walletBalance)} — tried to send {Sats(amount)} and need to keep a fee reserve of {Millisats(maxFeeAmount)}.");
+        {
+            // allow sweeping transaction if the amount is below threshold and empties the wallet
+            if (amountInSats == walletBalance.ToUnit(LightMoneyUnit.Satoshi) && amountInSats < 10000)
+            {
+                amountWithFee = walletBalance;
+                maxFeeAmount = LightMoney.Zero;
+            }
+            else
+            {
+                throw new InsufficientBalanceException(
+                    $"Insufficient balance: {Sats(walletBalance)} — tried to send {Sats(amount)} and need to keep a fee reserve of {Millisats(maxFeeAmount)}.");
+            }
+        }
 
         await using var dbContext = _dbContextFactory.CreateContext();
 
