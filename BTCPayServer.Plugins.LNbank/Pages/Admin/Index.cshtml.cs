@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,6 +20,8 @@ public class IndexModel : BasePageModel
     private readonly BTCPayService _btcpayService;
     public Dictionary<string, WalletsViewModel> WalletsByUserId { get; set; }
     public LightMoney TotalBalance { get; set; }
+    public LightMoney TotalLiabilities { get; set; }
+    public LightMoney TotalNodeBalance { get; set; }
     public bool IsReady { get; set; }
 
     public IndexModel(
@@ -65,6 +66,10 @@ public class IndexModel : BasePageModel
             };
             TotalBalance += userTotal;
         }
+
+        // check LNbank reserves
+        TotalLiabilities = await WalletService.GetLiabilitiesTotal();
+        TotalNodeBalance = (await _btcpayService.GetLightningNodeBalance()).OffchainBalance.Local;
 
         return Page();
     }

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.5.1]
 
+### Added
+
+- Display warnings if LNbank liabilities exceed Lightning node balance. (#21)
+
 ### Changed
 
 - Allow sweeping transaction if the amount is below threshold and empties the wallet. (#32)

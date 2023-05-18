@@ -284,4 +284,12 @@ public class WalletRepository
 
         return await queryable.ToListAsync();
     }
+
+    public async Task<long> GetLiabilitiesTotal()
+    {
+        await using var dbContext = _dbContextFactory.CreateContext();
+        return await dbContext.Transactions.AsQueryable()
+            .Where(t => t.AmountSettled != null)
+            .SumAsync(t => t.AmountSettled);
+    }
 }

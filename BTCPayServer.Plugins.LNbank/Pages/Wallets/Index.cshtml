@@ -28,6 +28,14 @@
     }
 </div>
 
+@if (Model.TotalNodeBalance < Model.TotalLiabilities)
+{
+    <div class="alert alert-warning mb-5" role="alert">
+        This Lightning node's balance is less than the LNbank liabilities.
+        You might not be able to withdraw your funds! Get in touch with the administrator.
+    </div>
+}
+
 <partial name="_StatusMessage" />
 
 @if (Model.Wallets.Any())

@@ -431,6 +431,12 @@ public class WalletService
         return result;
     }
 
+    public async Task<LightMoney> GetLiabilitiesTotal()
+    {
+        var total = await _walletRepository.GetLiabilitiesTotal();
+        return new LightMoney(total);
+    }
+
     private async Task BroadcastTransactionUpdate(Transaction transaction, string eventName)
     {
         await _transactionHub.Clients.All.SendAsync("transaction-update",

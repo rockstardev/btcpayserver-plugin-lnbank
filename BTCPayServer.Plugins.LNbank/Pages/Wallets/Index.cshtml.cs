@@ -20,6 +20,8 @@ public class IndexModel : BasePageModel
     private readonly BTCPayService _btcpayService;
     public IEnumerable<Wallet> Wallets { get; set; }
     public LightMoney TotalBalance { get; set; }
+    public LightMoney TotalLiabilities { get; set; }
+    public LightMoney TotalNodeBalance { get; set; }
     public bool IsReady { get; set; }
 
     public IndexModel(
@@ -38,7 +40,7 @@ public class IndexModel : BasePageModel
         {
             TempData[WellKnownTempData.ErrorMessage] = "LNbank requires an internal Lightning node to be configured.";
         }
-        
+
         Wallets = await WalletRepository.GetWallets(new WalletsQuery
         {
             UserId = new[] { UserId },
@@ -54,6 +56,10 @@ public class IndexModel : BasePageModel
         TotalBalance = Wallets
             .Select(w => w.Balance)
             .Aggregate((res, current) => res + current);
+
+        // check LNbank reserves
+        TotalLiabilities = await WalletService.GetLiabilitiesTotal();
+        TotalNodeBalance = (await _btcpayService.GetLightningNodeBalance()).OffchainBalance.Local;
 
         return Page();
     }
