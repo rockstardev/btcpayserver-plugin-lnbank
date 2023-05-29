@@ -56,7 +56,7 @@ public class LightningInvoiceWatcher : BackgroundService
 
             if (count > 0)
             {
-                _logger.LogInformation("Processing {Count} transactions", count);
+                _logger.LogDebug("Processing {Count} transactions", count);
 
                 try
                 {
@@ -137,10 +137,9 @@ public class LightningInvoiceWatcher : BackgroundService
         {
             case LightningInvoiceStatus.Paid:
                 {
-                    DateTimeOffset paidAt = invoice.PaidAt ?? DateTimeOffset.Now;
-                    LightMoney
-                        amount = invoice.Amount ?? invoice.AmountReceived; // Zero amount invoices have amount as null value
-                    LightMoney feeAmount = amount - invoice.AmountReceived;
+                    var paidAt = invoice.PaidAt ?? DateTimeOffset.Now;
+                    var amount = invoice.Amount ?? invoice.AmountReceived; // Zero amount invoices have amount as null value
+                    var feeAmount = amount - invoice.AmountReceived;
                     await walletService.Settle(transaction, amount, invoice.AmountReceived, feeAmount, paidAt, transaction.Preimage);
                     break;
                 }
@@ -155,7 +154,7 @@ public class LightningInvoiceWatcher : BackgroundService
     {
         LightningPaymentData payment = null;
         string errorDetails = null;
-        bool invalidate = false;
+        var invalidate = false;
 
         try
         {
@@ -195,8 +194,8 @@ public class LightningInvoiceWatcher : BackgroundService
         {
             case LightningPaymentStatus.Complete:
                 {
-                    DateTimeOffset paidAt = payment.CreatedAt ?? DateTimeOffset.Now;
-                    LightMoney originalAmount = payment.TotalAmount - payment.FeeAmount;
+                    var paidAt = payment.CreatedAt ?? DateTimeOffset.Now;
+                    var originalAmount = payment.TotalAmount - payment.FeeAmount;
                     await walletService.Settle(transaction, originalAmount, payment.TotalAmount * -1, payment.FeeAmount,
                         paidAt, payment.Preimage);
                     break;
