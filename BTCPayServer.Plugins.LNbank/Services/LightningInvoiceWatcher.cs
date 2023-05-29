@@ -103,7 +103,7 @@ public class LightningInvoiceWatcher : BackgroundService
     {
         LightningInvoiceData invoice = null;
         string errorDetails = null;
-        bool invalidate = false;
+        var invalidate = false;
 
         try
         {
@@ -116,7 +116,10 @@ public class LightningInvoiceWatcher : BackgroundService
         }
         catch (Exception exception)
         {
-            errorDetails = exception.Message;
+            _logger.LogError(exception,
+                "Unable to resolve invoice (Invoice Id = {InvoiceId}) for transaction {TransactionId}",
+                transaction.InvoiceId, transaction.TransactionId);
+            return;
         }
 
         if (invoice == null)
@@ -165,12 +168,15 @@ public class LightningInvoiceWatcher : BackgroundService
         }
         catch (Exception exception)
         {
-            errorDetails = exception.Message;
+            _logger.LogError(exception,
+                "Unable to resolve payment (Payment Hash = {PaymentHash}) for transaction {TransactionId}",
+                transaction.PaymentHash, transaction.TransactionId);
+            return;
         }
 
         if (payment == null)
         {
-            bool isInflight = transaction.IsPending && transaction.CreatedAt > DateTimeOffset.Now - _inflightDelay;
+            var isInflight = transaction.IsPending && transaction.CreatedAt > DateTimeOffset.Now - _inflightDelay;
             if (!isInflight)
             {
                 invalidate = InvalidateAfterRetries(transaction.PaymentHash, 12);
