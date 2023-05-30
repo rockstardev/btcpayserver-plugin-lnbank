@@ -59,3 +59,7 @@ main table tr:hover .transaction-edit {
 main #LNbank-TransactionDetails {
   margin-top: var(--btcpay-space-l);
 }
+
+[data-hide-sensitive-info="true"] .lnbank-wallet-balance .ct-label.ct-vertical.ct-start {
+  visibility: hidden;
+}

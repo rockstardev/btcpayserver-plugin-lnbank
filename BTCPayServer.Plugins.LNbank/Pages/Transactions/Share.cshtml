@@ -30,7 +30,7 @@
             @if (Model.Transaction.IsPaid || Model.Transaction.IsSettled)
             {
                 <h3 id="LNbank-TransactionSettled" class="text-success">
-                    @Helpers.Sats(Model.Transaction.AmountSettled)
+                    <span data-sensitive>@Helpers.Sats(Model.Transaction.AmountSettled)</span>
                     @Model.Transaction.Status
                 </h3>
                 <h4 class="h4 text-muted">

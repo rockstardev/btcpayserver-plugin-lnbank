@@ -17,7 +17,7 @@
 @if (Model.Transaction.IsPaid || Model.Transaction.IsSettled)
 {
     <h3 id="LNbank-TransactionSettled" class="text-@(Model.Transaction.AmountSettled > 0 ? "success" : "danger")">
-        @Helpers.Sats(Model.Transaction.AmountSettled)
+        <span data-sensitive>@Helpers.Sats(Model.Transaction.AmountSettled)</span>
         @Model.Transaction.Status
     </h3>
     <h4 class="h4 text-muted">
@@ -37,7 +37,7 @@
 else
 {
     <h3 id="LNbank-TransactionAmount" class="text-@Helpers.TransactionStateClass(Model.Transaction)">
-        @Helpers.Sats(Model.Transaction.Amount)
+        <span data-sensitive>@Helpers.Sats(Model.Transaction.Amount)</span>
         @Model.Transaction.Status
     </h3>
     @if (!Model.Transaction.IsCancelled)

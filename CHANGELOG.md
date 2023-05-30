@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.5.2]
 
+### Added
+
+- Incorporate "Hide Sensitive Info" setting from BTCPay Server.
+
 ### Fixed
 
 - Fix updating wallet name and route hint default. (btcpayserver/btcpayserver#5009)

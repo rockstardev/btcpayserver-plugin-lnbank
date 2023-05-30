@@ -5,7 +5,7 @@
 <div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-3">
     <a asp-page="/Wallets/Wallet" asp-route-walletId="@Model.WalletId" class="unobtrusive-link" id="LNbank-WalletOverview">
         <h2 class="my-1" id="LNbank-WalletName">@Model.Name</h2>
-        <div class="text-muted fw-semibold" id="LNbank-WalletBalance" title="@Helpers.Millisats(Model.Balance)">
+        <div class="text-muted fw-semibold" id="LNbank-WalletBalance" title="@Helpers.Millisats(Model.Balance)" data-sensitive>
             @Helpers.Sats(Model.Balance)
         </div>
     </a>

@@ -122,17 +122,19 @@
                                 }
                             </td>
                             <td>
-                                @if (withdrawConfig.MaxTotal != null && withdrawConfig.MaxTotal > 0)
-                                {
-                                    <span>@Helpers.Sats(withdrawConfig.MaxTotal)</span>
-                                    <span>(@Helpers.Sats(withdrawConfig.GetRemainingBalance(true)) remaining)</span>
-                                }
-                                else
-                                {
-                                    <span>No limit</span>
-                                }
+                                <div data-sensitive>
+                                    @if (withdrawConfig.MaxTotal != null && withdrawConfig.MaxTotal > 0)
+                                    {
+                                        <span>@Helpers.Sats(withdrawConfig.MaxTotal)</span>
+                                        <span>(@Helpers.Sats(withdrawConfig.GetRemainingBalance(true)) remaining)</span>
+                                    }
+                                    else
+                                    {
+                                        <span>No limit</span>
+                                    }
+                                </div>
                             </td>
-                            <td>@(withdrawConfig.MaxPerUse != null && withdrawConfig.MaxPerUse > 0 ? Helpers.Sats(withdrawConfig.MaxPerUse) : "No limit")</td>
+                            <td><span data-sensitive>@(withdrawConfig.MaxPerUse != null && withdrawConfig.MaxPerUse > 0 ? Helpers.Sats(withdrawConfig.MaxPerUse) : "No limit")</span></td>
                             <td class="text-end">
                                 <button type="button" class="btn btn-link p-0 collapsed only-for-js" data-bs-toggle="collapse" data-bs-target="#@detailsId" aria-expanded="false" aria-controls="@detailsId">
                                     @await Component.InvokeAsync("Icon", new { symbol = "caret-down" })

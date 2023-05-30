@@ -60,7 +60,7 @@
             }
             else
             {
-                <p>Amount: <strong id="LNbank-Amount">@Helpers.Sats(Model.Bolt11.MinimumAmount)</strong></p>
+                <p>Amount: <strong id="LNbank-Amount" data-sensitive>@Helpers.Sats(Model.Bolt11.MinimumAmount)</strong></p>
             }
         }
         else
@@ -84,7 +84,7 @@
             {
                 <dl class="row mb-0">
                     <dt>Amount</dt>
-                    <dd id="LNbank-Amount">@Helpers.Sats(Model.LnurlPay.MinSendable)</dd>
+                    <dd id="LNbank-Amount"><span data-sensitive>@Helpers.Sats(Model.LnurlPay.MinSendable)</span></dd>
                 </dl>
             }
             else
@@ -97,8 +97,8 @@
                                     Model.LnurlPay.MaxSendable.ToUnit(LightMoneyUnit.Satoshi))"
                            style="width:15ch;" autofocus required />
                     <div class="form-text text-muted">
-                        Minimum: @Helpers.Sats(Model.LnurlPay.MinSendable) /
-                        Maximum: @Helpers.Sats(Math.Min(Model.CurrentWallet.Balance, Model.LnurlPay.MaxSendable))
+                        Minimum: <span data-sensitive>@Helpers.Sats(Model.LnurlPay.MinSendable)</span> /
+                        Maximum: <span data-sensitive>@Helpers.Sats(Math.Min(Model.CurrentWallet.Balance, Model.LnurlPay.MaxSendable))</span>
                     </div>
                     <span asp-validation-for="ExplicitAmount" class="text-danger"></span>
                 </div>
@@ -122,7 +122,7 @@
                 Send
                 @if (Model.ExplicitAmount == null && (Model.Bolt11?.MinimumAmount ?? Model.LnurlPay?.MinSendable) != null)
                 {
-                    @Helpers.Sats(Model.Bolt11?.MinimumAmount ?? Model.LnurlPay?.MinSendable);
+                    <span data-sensitive>@Helpers.Sats(Model.Bolt11?.MinimumAmount ?? Model.LnurlPay?.MinSendable)</span>
                 }
             </button>
         </div>

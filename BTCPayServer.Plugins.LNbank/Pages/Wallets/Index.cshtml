@@ -11,7 +11,7 @@
 <div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-3">
     <div>
         <h2 class="my-1">@ViewData["Title"]</h2>
-        <div class="text-muted fw-semibold" id="LNbank-WalletBalance">
+        <div class="text-muted fw-semibold" id="LNbank-WalletBalance" data-sensitive>
             @Helpers.Sats(Model.TotalBalance)
         </div>
     </div>
@@ -49,9 +49,9 @@
                         <h5 class="card-title">@wallet.Name</h5>
                         <div class="card-text d-flex flex-wrap align-items-center justify-content-between gap-2">
                             <span class="badge bg-light fs-6">
-                                @Helpers.Sats(wallet.Balance)
+                                <span class="data-sensitive">@Helpers.Sats(wallet.Balance)</span>
                             </span>
-                            <span class="text-muted">
+                            <span class="text-muted" data-sensitive>
                                 @wallet.Transactions.Count transaction@(wallet.Transactions.Count == 1 ? "" : "s")
                             </span>
                         </div>

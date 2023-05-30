@@ -21,8 +21,8 @@
         @Html.DisplayNameFor(model => model.CurrentWallet.Balance)
     </dt>
     <dd class="col-sm-9 col-xl-10" id="LNbank-Balance">
-        @Helpers.Sats(Model.CurrentWallet.Balance) /
-        @Helpers.Millisats(Model.CurrentWallet.Balance)
+        <span data-sensitive>@Helpers.Sats(Model.CurrentWallet.Balance)</span> /
+        <span data-sensitive>@Helpers.Millisats(Model.CurrentWallet.Balance)</span>
     </dd>
     <dt class="col-sm-3 col-xl-2">
         @Html.DisplayNameFor(model => model.CurrentWallet.WalletId)
