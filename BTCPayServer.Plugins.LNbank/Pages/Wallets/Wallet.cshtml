@@ -5,12 +5,21 @@
 @using Microsoft.AspNetCore.Mvc.TagHelpers
 @using BTCPayServer.Abstractions.TagHelpers
 @using BTCPayServer.Abstractions.Models
+@using BTCPayServer.Plugins.LNbank.Services.Wallets
 @inject BTCPayServer.Abstractions.Services.Safe Safe
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.WalletModel
 
 @{
     ViewData.SetActivePage(LNbankNavPages.Wallet, Model.CurrentWallet.Name, Model.CurrentWallet.WalletId);
     var pendingTransactionIds = Model.Transactions.Where(t => t.IsPending || t.IsRevalidating).Select(t => t.TransactionId);
+}
+
+@section LNbankHead {
+    @if (Model.HistogramData != null)
+    {
+        <link rel="stylesheet" href="~/vendor/chartist/chartist.css" asp-append-version="true">
+        <script src="~/vendor/chartist/chartist.min.js" asp-append-version="true"></script>
+    }
 }
 
 @functions
@@ -24,6 +33,90 @@
 }
 
 <partial name="_WalletHeader" model="Model.CurrentWallet"/>
+
+@if (Model.HistogramData != null)
+{
+    <div id="LNbankWalletBalance-@Model.CurrentWallet.WalletId" class="widget lnbank-wallet-balance">
+        <div class="d-flex gap-3 align-items-center justify-content-between mb-2">
+            <h6>Wallet Balance</h6>
+        </div>
+        <header class="mb-3">
+            @if (Model.CurrentWallet.Balance != null)
+            {
+                <div class="balance d-flex align-items-baseline gap-1">
+                    <h3 class="d-inline-block me-1" data-balance="@Model.CurrentWallet.Balance" data-sensitive>@Helpers.Sats(Model.CurrentWallet.Balance, false)</h3>
+                    <span class="text-secondary fw-semibold currency">sats</span>
+                </div>
+            }
+            <div class="btn-group only-for-js mt-1" role="group" aria-label="Period">
+                <input type="radio" class="btn-check" name="LNbankWalletBalancePeriod-@Model.CurrentWallet.WalletId" id="LNbankWalletBalancePeriodWeek-@Model.CurrentWallet.WalletId" value="@HistogramType.Week" @(Model.HistogramData.Type == HistogramType.Week ? "checked" : "")>
+                <label class="btn btn-link" for="LNbankWalletBalancePeriodWeek-@Model.CurrentWallet.WalletId">1W</label>
+                <input type="radio" class="btn-check" name="LNbankWalletBalancePeriod-@Model.CurrentWallet.WalletId" id="LNbankWalletBalancePeriodMonth-@Model.CurrentWallet.WalletId" value="@HistogramType.Month" @(Model.HistogramData.Type == HistogramType.Month ? "checked" : "")>
+                <label class="btn btn-link" for="LNbankWalletBalancePeriodMonth-@Model.CurrentWallet.WalletId">1M</label>
+                <input type="radio" class="btn-check" name="LNbankWalletBalancePeriod-@Model.CurrentWallet.WalletId" id="LNbankWalletBalancePeriodYear-@Model.CurrentWallet.WalletId" value="@HistogramType.Year" @(Model.HistogramData.Type == HistogramType.Year ? "checked" : "")>
+                <label class="btn btn-link" for="LNbankWalletBalancePeriodYear-@Model.CurrentWallet.WalletId">1Y</label>
+            </div>
+        </header>
+        <div class="ct-chart"></div>
+        <script>
+            (function () {
+                const lnbankWalletId = @Safe.Json(Model.CurrentWallet.WalletId);
+                let data = { series: @Safe.Json(Model.HistogramData.Series), labels: @Safe.Json(Model.HistogramData.Labels) };
+
+                const id = `LNbankWalletBalance-${lnbankWalletId}`;
+                const baseUrl = @Safe.Json(Url.Action("Histogram", "Wallets", new { walletId = Model.CurrentWallet.WalletId, type = HistogramType.Week }));
+                const chartOpts = {
+                    fullWidth: true,
+                    showArea: true
+                };
+
+                const render = data => {
+                    let { series, labels } = data;
+                    if (!series) return;
+
+                    const min = Math.min(...series);
+                    const max = Math.max(...series);
+                    const low = Math.max(min - ((max - min) / 5), 0);
+                    const renderOpts = Object.assign({}, chartOpts, { low });
+                    const chart = new Chartist.Line(`#${id} .ct-chart`, {
+                        labels,
+                        series: [series]
+                    }, renderOpts);
+
+                    // prevent y-axis labels from getting cut off
+                    window.setTimeout(() => {
+                        const yLabels = [...document.querySelectorAll('.ct-label.ct-vertical.ct-start')];
+                        if (yLabels) {
+                            const width = Math.max(...(yLabels.map(l => l.innerText.length * 7.5)));
+                            const opts = Object.assign({}, renderOpts, {
+                                axisY: Object.assign({}, renderOpts.axisY, { offset: width })
+                            });
+                            chart.update(null, opts);
+                        }
+                    }, 0)
+                };
+
+                const update = async type => {
+                    const url = baseUrl.replace(/\/week$/gi, `/${type}`);
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        data = await response.json();
+                        render(data);
+                    }
+                };
+
+                render(data);
+
+                document.addEventListener('DOMContentLoaded', () => {
+                    delegate('change', `#${id} [name="LNbankWalletBalancePeriod-${lnbankWalletId}"]`, async e => {
+                        const type = e.target.value;
+                        await update(type);
+                    });
+                });
+            })();
+        </script>
+    </div>
+}
 
 @if (Model.Transactions.Any())
 {

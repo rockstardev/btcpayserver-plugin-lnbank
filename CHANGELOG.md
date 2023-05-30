@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Incorporate "Hide Sensitive Info" setting from BTCPay Server.
+- Add wallet balance graph.
 
 ### Fixed
 

@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using BTCPayServer.Lightning;
 using Microsoft.EntityFrameworkCore;
+using NBXplorer.Models;
 
 namespace BTCPayServer.Plugins.LNbank.Data.Models;
 
@@ -26,10 +27,14 @@ public class Wallet
 
     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
-    public LightMoney Balance =>
-        Transactions
+    public LightMoney Balance => GetBalance(Transactions);
+
+    public static LightMoney GetBalance(IEnumerable<Transaction> transactions)
+    {
+        return transactions
             .Where(t => t.AmountSettled != null)
-            .Aggregate(LightMoney.Zero, (total, t) => total + t.AmountSettled);
+            .Sum(t => t.AmountSettled);
+    }
 
     [NotMapped]
     public bool HasBalance => Balance >= LightMoney.Satoshis(1);
