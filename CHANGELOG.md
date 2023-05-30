@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [![Support this plugin](./docs/img/support.png)](lightning:LNURL1DP68GURN8GHJ7AMPD3KX2AR0VEEKZAR0WD5XJTNRDAKJ7TNHV4KXCTTTDEHHWM30D3H82UNVWQHKXUN0WAJX2ER9V9E8G6PN8QSKVTEZ)
 
+## [1.5.2]
+
+### Fixed
+
+- Fix updating wallet name and route hint default. (btcpayserver/btcpayserver#5009)
+
+### Changed
+
+- Improve logging of errors and debug messages.
+
 ## [1.5.1]
 
 ### Added
