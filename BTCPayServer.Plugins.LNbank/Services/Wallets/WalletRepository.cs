@@ -24,7 +24,7 @@ public class WalletRepository
         var wallets = await FilterWallets(dbContext.Wallets.AsQueryable(), query).ToListAsync();
         return wallets.Select(wallet =>
         {
-            if (query.IsServerAdmin)
+            if (query.HasAdminAccess(wallet))
             {
                 wallet.AccessLevel = AccessLevel.Admin;
             }
@@ -33,8 +33,6 @@ public class WalletRepository
                 var key = wallet.AccessKeys.FirstOrDefault(ak => query.UserId.Contains(ak.UserId));
                 if (key != null)
                     wallet.AccessLevel = key.Level;
-                else if (query.UserId != null && query.UserId.Contains(wallet.UserId))
-                    wallet.AccessLevel = AccessLevel.Admin;
             }
             return wallet;
         });
@@ -77,24 +75,22 @@ public class WalletRepository
         if (wallet == null)
             return null;
 
-        if (query.IsServerAdmin)
+        AccessKey key = null;
+        if (query.HasAdminAccess(wallet))
         {
             wallet.AccessLevel = AccessLevel.Admin;
         }
         else if (query.UserId != null)
         {
-            var key = wallet.AccessKeys.FirstOrDefault(ak => query.UserId.Contains(ak.UserId));
-            if (key != null)
-                wallet.AccessLevel = key.Level;
-            else if (query.UserId.Contains(wallet.UserId))
-                wallet.AccessLevel = AccessLevel.Admin;
+            key = wallet.AccessKeys.FirstOrDefault(ak => query.UserId.Contains(ak.UserId));
         }
         else if (query.AccessKey != null)
         {
-            var key = wallet.AccessKeys.FirstOrDefault(ak => query.AccessKey.Contains(ak.Key));
-            if (key != null)
-                wallet.AccessLevel = key.Level;
+            key = wallet.AccessKeys.FirstOrDefault(ak => query.AccessKey.Contains(ak.Key));
         }
+
+        if (key != null)
+            wallet.AccessLevel = key.Level;
 
         return wallet;
     }

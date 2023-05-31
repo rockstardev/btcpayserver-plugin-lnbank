@@ -65,7 +65,7 @@ public class AuthorizationRequirementHandler : IPluginHookFilter
                     obj.MarkSuccessful();
                 break;
             case LNbankPolicies.CanViewWallet:
-                if (wallet != null)
+                if (wallet?.AccessLevel != null)
                     obj.MarkSuccessful();
                 break;
         }

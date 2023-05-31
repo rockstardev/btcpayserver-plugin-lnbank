@@ -6,7 +6,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using BTCPayServer.Lightning;
 using Microsoft.EntityFrameworkCore;
-using NBXplorer.Models;
 
 namespace BTCPayServer.Plugins.LNbank.Data.Models;
 
@@ -42,7 +41,7 @@ public class Wallet
     public ICollection<AccessKey> AccessKeys { get; set; } = new List<AccessKey>();
 
     [NotMapped]
-    public AccessLevel AccessLevel { get; set; }
+    public AccessLevel? AccessLevel { get; set; }
 
     public ICollection<WithdrawConfig> WithdrawConfigs { get; set; } = new List<WithdrawConfig>();
 
