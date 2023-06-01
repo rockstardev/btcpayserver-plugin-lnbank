@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Payments would sometimes not be detected by BTCPay Server. (#33) @NicolasDorier
 - Fix updating wallet name and route hint default. (btcpayserver/btcpayserver#5009)
 - Prevent wallet lock out of owner caused by improper access key. (btcpayserver/btcpayserver#5026)
 
