@@ -14,11 +14,11 @@ public class LNbankPluginMigrationRunner : IHostedService
     private readonly WalletService _walletService;
 
     public LNbankPluginMigrationRunner(
-        LNbankPluginDbContextFactory testPluginDbContextFactory,
+        LNbankPluginDbContextFactory dbContextFactory,
         ISettingsRepository settingsRepository,
         WalletService walletService)
     {
-        _dbContextFactory = testPluginDbContextFactory;
+        _dbContextFactory = dbContextFactory;
         _settingsRepository = settingsRepository;
         _walletService = walletService;
     }
