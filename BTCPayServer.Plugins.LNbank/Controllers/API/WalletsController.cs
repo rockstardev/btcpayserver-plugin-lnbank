@@ -21,7 +21,6 @@ namespace BTCPayServer.Plugins.LNbank.Controllers.API;
 
 [ApiController]
 [Route("~/api/v1/lnbank/[controller]")]
-[Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield)]
 public class WalletsController : ControllerBase
 {
     private readonly LNURLService _lnurlService;
@@ -77,7 +76,7 @@ public class WalletsController : ControllerBase
     }
 
     [HttpGet("{walletId}")]
-    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield, Policy = LNbankPolicies.CanViewWallet)]
+    [Authorize(AuthenticationSchemes = LNbankAuthenticationSchemes.AccessKey, Policy = LNbankPolicies.CanViewWallet)]
     public async Task<IActionResult> GetWallet(string walletId)
     {
         var wallet = await FetchWallet(walletId);
@@ -87,7 +86,7 @@ public class WalletsController : ControllerBase
     }
 
     [HttpPut("{walletId}")]
-    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield, Policy = LNbankPolicies.CanManageWallet)]
+    [Authorize(AuthenticationSchemes = LNbankAuthenticationSchemes.AccessKey, Policy = LNbankPolicies.CanManageWallet)]
     public async Task<IActionResult> UpdateWallet(string walletId, EditWalletRequest request)
     {
         var validationResult = Validate(request);
@@ -116,7 +115,7 @@ public class WalletsController : ControllerBase
     }
 
     [HttpDelete("{walletId}")]
-    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield, Policy = LNbankPolicies.CanManageWallet)]
+    [Authorize(AuthenticationSchemes = LNbankAuthenticationSchemes.AccessKey, Policy = LNbankPolicies.CanManageWallet)]
     public async Task<IActionResult> DeleteWallet(string walletId)
     {
         var wallet = await FetchWallet(walletId);
@@ -135,7 +134,7 @@ public class WalletsController : ControllerBase
     }
 
     [HttpPost("{walletId}/receive")]
-    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield, Policy = LNbankPolicies.CanCreateInvoices)]
+    [Authorize(AuthenticationSchemes = LNbankAuthenticationSchemes.AccessKey, Policy = LNbankPolicies.CanCreateInvoices)]
     public async Task<IActionResult> Receive(string walletId, ReceiveRequest receive)
     {
         var wallet = await FetchWallet(walletId);
@@ -164,7 +163,7 @@ public class WalletsController : ControllerBase
     }
 
     [HttpPost("{walletId}/send")]
-    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield, Policy = LNbankPolicies.CanSendMoney)]
+    [Authorize(AuthenticationSchemes = LNbankAuthenticationSchemes.AccessKey, Policy = LNbankPolicies.CanSendMoney)]
     public async Task<IActionResult> Send(string walletId, SendRequest send)
     {
         var wallet = await FetchWallet(walletId);
@@ -220,7 +219,7 @@ public class WalletsController : ControllerBase
     }
 
     [HttpGet("{walletId}/transactions")]
-    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield, Policy = LNbankPolicies.CanViewWallet)]
+    [Authorize(AuthenticationSchemes = LNbankAuthenticationSchemes.AccessKey, Policy = LNbankPolicies.CanViewWallet)]
     public async Task<IActionResult> GetTransactions(string walletId)
     {
         var wallet = await FetchWallet(walletId);
@@ -230,7 +229,7 @@ public class WalletsController : ControllerBase
     }
 
     [HttpGet("{walletId}/transactions/{transactionId}")]
-    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Greenfield, Policy = LNbankPolicies.CanViewWallet)]
+    [Authorize(AuthenticationSchemes = LNbankAuthenticationSchemes.AccessKey, Policy = LNbankPolicies.CanViewWallet)]
     public async Task<IActionResult> GetTransaction(string walletId, string transactionId)
     {
         var wallet = await FetchWallet(walletId);

@@ -53,8 +53,8 @@ public class LNbankAuthenticationHandler : AuthenticationHandler<LNbankAuthentic
         var accessKey = wallet.AccessKeys.First(a => a.Key == apiKey);
         var claims = new List<Claim>
         {
-            new(_identityOptions.CurrentValue.ClaimsIdentity.UserIdClaimType, wallet.UserId),
-            new("WalletId", wallet.WalletId),
+            new(_identityOptions.CurrentValue.ClaimsIdentity.UserIdClaimType, accessKey.UserId),
+            new("WalletId", accessKey.WalletId),
             new("AccessKey", accessKey.Key),
             new("AccessLevel", accessKey.Level.ToString())
         };
