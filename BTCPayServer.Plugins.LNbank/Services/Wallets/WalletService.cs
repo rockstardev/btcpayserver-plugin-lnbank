@@ -5,14 +5,12 @@ using System.Threading.Tasks;
 using BTCPayServer.Client;
 using BTCPayServer.Client.Models;
 using BTCPayServer.Lightning;
-using BTCPayServer.Plugins.LNbank.Data;
 using BTCPayServer.Plugins.LNbank.Data.Models;
 using BTCPayServer.Plugins.LNbank.Exceptions;
 using BTCPayServer.Plugins.LNbank.Hubs;
 using LNURL;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -22,6 +20,7 @@ namespace BTCPayServer.Plugins.LNbank.Services.Wallets;
 
 public class WalletService
 {
+    public const float MaxFeePercentDefault = 3;
     public static readonly TimeSpan SendTimeout = TimeSpan.FromSeconds(21);
     public static readonly TimeSpan ExpiryDefault = TimeSpan.FromDays(1);
     private readonly BTCPayService _btcpayService;
@@ -108,7 +107,7 @@ public class WalletService
     }
 
     public async Task<Transaction> Send(Wallet wallet, BOLT11PaymentRequest bolt11, string? description,
-        LightMoney? explicitAmount = null, string? withdrawConfigId = null, float maxFeePercent = 3, CancellationToken cancellationToken = default)
+        LightMoney? explicitAmount = null, string? withdrawConfigId = null, float maxFeePercent = MaxFeePercentDefault, CancellationToken cancellationToken = default)
     {
         if (bolt11.ExpiryDate <= DateTimeOffset.UtcNow)
             throw new PaymentRequestValidationException($"Payment request already expired at {bolt11.ExpiryDate}.");

@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using BTCPayServer.Lightning;
+using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using Microsoft.EntityFrameworkCore;
 
 namespace BTCPayServer.Plugins.LNbank.Data.Models;
@@ -67,17 +68,26 @@ public class WithdrawConfig
 
     public LightMoney GetRemainingBalance(bool total = false)
     {
-        var balance = Wallet.Balance;
+        var walletBalance = Wallet.Balance;
         var hasTotalLimit = MaxTotal != null && MaxTotal > LightMoney.Zero;
         var hasPerUseLimit = MaxPerUse != null && MaxPerUse > LightMoney.Zero;
         var upperLimit = total ? MaxTotal : MaxPerUse;
         var limit = hasTotalLimit || hasPerUseLimit ? upperLimit : null;
         var payments = GetPaymentsInInterval();
-        var remaining = Limit is > 0 && payments.Count >= Limit
-            ? LightMoney.Zero
-            : (limit ?? balance) + payments.Sum(t => t.AmountSettled);
+        if (Limit is > 0 && payments.Count >= Limit) return LightMoney.Zero;
 
-        return Math.Min(remaining, balance);
+        // Account for fees
+        var remaining = (limit ?? walletBalance) + payments.Sum(t => t.AmountSettled);
+        var remainingInSats = remaining.ToUnit(LightMoneyUnit.Satoshi);
+        var maxFeeAmount = LightMoney.Satoshis(remainingInSats * (decimal)WalletService.MaxFeePercentDefault / 100);
+        var remainingMinusFee = remaining - maxFeeAmount;
+        // allow sweeping transaction if the amount is below threshold and empties the wallet
+        if (remainingInSats == walletBalance.ToUnit(LightMoneyUnit.Satoshi) && remainingInSats < 10000)
+        {
+            remainingMinusFee = walletBalance;
+        }
+
+        return Math.Min(remainingMinusFee, walletBalance);
     }
 
     public uint GetRemainingUsages() {

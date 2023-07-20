@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.6.2]
 
+### Fixed
+
+- Account for fees in LNURL withdraw request data. (#35)
+
 ### Changed
 
 - Add `lightning:` prefix to QR code data, so that generic readers can use them. (#36)
