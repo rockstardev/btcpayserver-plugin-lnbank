@@ -66,7 +66,7 @@
                 {
                     <div class="payment-box my-4">
                         <div class="qr-container" data-clipboard="@Model.Transaction.PaymentRequest" id="LNbank-QRContainer">
-                            @await Component.InvokeAsync("QRCode", new { data = Model.Transaction.PaymentRequest.ToUpperInvariant() })
+                            @await Component.InvokeAsync("QRCode", new { data = $"lightning:{Model.Transaction.PaymentRequest.ToUpperInvariant()}" })
                         </div>
                         <div class="input-group mt-3">
                             <div class="form-floating">

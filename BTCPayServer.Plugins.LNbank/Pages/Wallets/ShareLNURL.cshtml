@@ -33,7 +33,7 @@
             <h2 id="LNbank-TransactionTitle">@ViewData["Title"]</h2>
             <div class="payment-box my-4">
                 <div class="qr-container" data-clipboard="@lnurlBech32" id="LNbank-QRContainer">
-                    @await Component.InvokeAsync("QRCode", new { data = lnurlBech32.ToUpperInvariant() })
+                    @await Component.InvokeAsync("QRCode", new { data = $"lightning:{lnurlBech32.ToUpperInvariant()}" })
                 </div>
                 <div class="input-group mt-3">
                     <div class="form-floating">

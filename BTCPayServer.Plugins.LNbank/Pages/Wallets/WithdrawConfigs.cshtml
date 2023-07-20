@@ -145,7 +145,7 @@
                             <td colspan="5" class="border-top-0">
                                 <div class="payment-box mx-0 mb-4">
                                     <div class="qr-container" data-clipboard="@lnurl">
-                                        @await Component.InvokeAsync("QRCode", new { data = lnurl.ToUpperInvariant() })
+                                        @await Component.InvokeAsync("QRCode", new { data = $"lightning:{lnurl.ToUpperInvariant()}" })
                                     </div>
                                     <div class="input-group mt-3">
                                         <div class="form-floating">
