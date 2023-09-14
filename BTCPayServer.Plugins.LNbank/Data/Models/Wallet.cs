@@ -50,6 +50,9 @@ public class Wallet
     [DisplayName("Add routing hints for private channels by default")]
     public bool PrivateRouteHintsByDefault { get; set; }
 
+    [DisplayName("Lightning Address identifier")]
+    public string LightningAddressIdentifier { get; set; }
+
     internal static void OnModelCreating(ModelBuilder builder)
     {
         builder

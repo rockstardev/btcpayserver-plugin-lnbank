@@ -26,6 +26,7 @@ public class LNbankPlugin : BaseBTCPayServerPlugin
         services.AddSingleton<IUIExtension>(new UIExtension("LNPaymentMethodSetupTab", "ln-payment-method-setup-tab"));
 
         services.AddSingleton<IPluginHookFilter, AuthorizationRequirementHandler>();
+        services.AddSingleton<IPluginHookFilter, ResolveLightningAddressHandler>();
 
         services.AddSingleton<LNbankPluginDbContextFactory>();
         services.AddDbContext<LNbankPluginDbContext>((provider, o) =>

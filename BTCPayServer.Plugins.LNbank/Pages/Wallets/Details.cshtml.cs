@@ -31,7 +31,10 @@ public class DetailsModel : BasePageModel
             return Page();
         }
 
-        if (await TryUpdateModelAsync(CurrentWallet, "CurrentWallet", w => w.Name, w => w.PrivateRouteHintsByDefault))
+        if (await TryUpdateModelAsync(CurrentWallet, "CurrentWallet",
+                w => w.Name,
+                w => w.LightningAddressIdentifier,
+                w => w.PrivateRouteHintsByDefault))
         {
             await WalletRepository.AddOrUpdateWallet(CurrentWallet);
             TempData[WellKnownTempData.SuccessMessage] = "Wallet successfully updated.";

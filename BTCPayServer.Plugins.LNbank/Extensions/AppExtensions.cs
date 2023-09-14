@@ -22,6 +22,7 @@ public static class AppExtensions
         services.AddSingleton<WithdrawConfigRepository>();
         services.AddSingleton<ISwaggerProvider, LNbankSwaggerProvider>();
         services.AddSingleton<AuthorizationRequirementHandler>();
+        services.AddSingleton<ResolveLightningAddressHandler>();
         services.AddScoped<IAuthorizationHandler, LNbankAuthorizationHandler>();
     }
 }

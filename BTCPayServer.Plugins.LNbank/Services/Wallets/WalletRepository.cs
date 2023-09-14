@@ -59,6 +59,9 @@ public class WalletRepository
         if (query.WalletId != null)
             queryable = queryable.Where(wallet => query.WalletId.Contains(wallet.WalletId));
 
+        if (query.LightningAddressIdentifier != null)
+            queryable = queryable.Where(wallet => query.LightningAddressIdentifier.Contains(wallet.LightningAddressIdentifier));
+
         if (query.IncludeTransactions)
             queryable = queryable.Include(w => w.Transactions).AsNoTracking();
 

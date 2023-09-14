@@ -24,4 +24,7 @@ public class WalletData
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string LnurlPayUri { get; set; }
+
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string LightningAddressIdentifier { get; set; }
 }
