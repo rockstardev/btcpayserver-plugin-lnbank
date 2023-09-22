@@ -37,21 +37,15 @@
                 </div>
                 <div class="input-group mt-3">
                     <div class="form-floating">
-                        <input id="LNbank-LNURL-Bech32" class="form-control-plaintext" readonly="readonly" value="@lnurlBech32">
-                        <label for="LNbank-LNURL-Bech32">LNURL (Bech 32)</label>
+                        @await Component.InvokeAsync("TruncateCenter", new { text = lnurlBech32, padding = 15, elastic = true, classes = "form-control-plaintext" })
+                        <label>LNURL (Bech 32)</label>
                     </div>
-                    <button type="button" class="btn btn-link" data-clipboard-target="#LNbank-LNURL-Bech32">
-                        @await Component.InvokeAsync("Icon", new { symbol = "copy" })
-                    </button>
                 </div>
                 <div class="input-group mt-3">
                     <div class="form-floating">
-                        <input id="LNbank-LNURL-URI" class="form-control-plaintext" readonly="readonly" value="@lnurlUri">
-                        <label for="LNbank-LNURL-URI">LNURL (URI)</label>
+                        @await Component.InvokeAsync("TruncateCenter", new { text = lnurlUri, padding = 15, elastic = true, classes = "form-control-plaintext" })
+                        <label>LNURL (URI)</label>
                     </div>
-                    <button type="button" class="btn btn-link" data-clipboard-target="#LNbank-LNURL-URI">
-                        @await Component.InvokeAsync("Icon", new { symbol = "copy" })
-                    </button>
                 </div>
                 <a class="btn btn-primary rounded-pill w-100 mt-4" target="_top" id="LNbank-PayInWallet"
                    href="lightning:@lnurlBech32">Pay in wallet</a>
