@@ -1,10 +1,12 @@
 @page "/plugins/lnbank/wallets/{walletId}/withdraw-configs/{handler?}"
 @using BTCPayServer.Plugins.LNbank.Data.Models
-@using Microsoft.AspNetCore.Mvc.TagHelpers
 @using BTCPayServer.Abstractions.Models
 @using BTCPayServer.Plugins.LNbank.Extensions
+@using BTCPayServer.Plugins.LNbank.Services
+@using BTCPayServer.Plugins.LNbank.Services.BoltCard
 @using ExchangeSharp
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.WithdrawConfigsModel
+@inject BoltCardService BoltCardService
 
 @{
     ViewData.SetActivePage(LNbankNavPages.WalletWithdrawConfigs, $"Withdraw configurations for \"{Model.CurrentWallet.Name}\"", Model.CurrentWallet.WalletId);
@@ -14,7 +16,7 @@
 }
 
 @section LNbankFoot {
-    <partial name="_ValidationScriptsPartial" />
+    <partial name="_ValidationScriptsPartial"/>
 }
 
 <partial name="_WalletHeader" model="Model.CurrentWallet"/>
@@ -32,7 +34,7 @@
         <form method="post" asp-page-handler="add">
             <div class="form-group">
                 <label asp-for="WithdrawConfig.Name" class="form-label" data-required></label>
-                <input asp-for="WithdrawConfig.Name" class="form-control" />
+                <input asp-for="WithdrawConfig.Name" class="form-control"/>
                 <span asp-validation-for="WithdrawConfig.Name" class="text-danger"></span>
             </div>
             <div class="d-flex flex-wrap gap-4 mb-4">
@@ -44,7 +46,7 @@
                 <div class="form-group mb-0" id="WithdrawConfig-Limit">
                     <label asp-for="WithdrawConfig.Limit" class="form-label"></label>
                     <div class="input-group">
-                        <input asp-for="WithdrawConfig.Limit" class="form-control flex-grow-0 text-end hide-number-spin" type="number" aria-describedby="WithdrawConfigLimit-Addon" style="width:15ch;" />
+                        <input asp-for="WithdrawConfig.Limit" class="form-control flex-grow-0 text-end hide-number-spin" type="number" aria-describedby="WithdrawConfigLimit-Addon" style="width:15ch;"/>
                         <span class="input-group-text" id="WithdrawConfigLimit-Addon">times</span>
                     </div>
                     <span asp-validation-for="WithdrawConfig.Limit" class="text-danger"></span>
@@ -65,7 +67,7 @@
                 <div class="form-group mb-0">
                     <label asp-for="WithdrawConfig.MaxTotal" class="form-label"></label>
                     <div class="input-group">
-                        <input asp-for="WithdrawConfig.MaxTotal" class="form-control flex-grow-0 text-end hide-number-spin" type="number" aria-describedby="WithdrawConfigMaxTotal-Addon" style="width:15ch;" />
+                        <input asp-for="WithdrawConfig.MaxTotal" class="form-control flex-grow-0 text-end hide-number-spin" type="number" aria-describedby="WithdrawConfigMaxTotal-Addon" style="width:15ch;"/>
                         <span class="input-group-text" id="WithdrawConfigMaxTotal-Addon">sats</span>
                     </div>
                     <span asp-validation-for="WithdrawConfig.MaxTotal" class="text-danger"></span>
@@ -73,7 +75,7 @@
                 <div class="form-group mb-0">
                     <label asp-for="WithdrawConfig.MaxPerUse" class="form-label"></label>
                     <div class="input-group">
-                        <input asp-for="WithdrawConfig.MaxPerUse" class="form-control flex-grow-0 text-end hide-number-spin" type="number" aria-describedby="WithdrawConfigMaxPerUse-Addon" style="width:15ch;" />
+                        <input asp-for="WithdrawConfig.MaxPerUse" class="form-control flex-grow-0 text-end hide-number-spin" type="number" aria-describedby="WithdrawConfigMaxPerUse-Addon" style="width:15ch;"/>
                         <span class="input-group-text" id="WithdrawConfigMaxPerUse-Addon">sats</span>
                     </div>
                     <span asp-validation-for="WithdrawConfig.MaxPerUse" class="text-danger"></span>
@@ -94,6 +96,7 @@
                         <th>Reuse</th>
                         <th>Max total</th>
                         <th>Max per use</th>
+                        <th>Bolt card</th>
                         <th></th>
                     </tr>
                     </thead>
@@ -134,10 +137,38 @@
                                     }
                                 </div>
                             </td>
-                            <td><span data-sensitive>@(withdrawConfig.MaxPerUse != null && withdrawConfig.MaxPerUse > 0 ? Helpers.Sats(withdrawConfig.MaxPerUse) : "No limit")</span></td>
+                            <td>
+                                <span data-sensitive>@(withdrawConfig.MaxPerUse != null && withdrawConfig.MaxPerUse > 0 ? Helpers.Sats(withdrawConfig.MaxPerUse) : "No limit")</span>
+                            </td>
+                            <td>
+                                @if (withdrawConfig.BoltCard is null)
+                                {
+                                    <a asp-page-handler="IssueBolt" class="btn btn-link p-0" asp-route-withdrawConfigId="@withdrawConfig.WithdrawConfigId">Issue Bolt Card</a>
+                                }
+                                else
+                                {
+                                    if (withdrawConfig.BoltCard?.Status == BoltCardStatus.PendingActivation)
+                                    {
+                                        <button type="button" class="btn btn-link p-0 collapsed only-for-js" data-bs-toggle="collapse" data-bs-target="#@detailsId-Bolt" aria-expanded="false" aria-controls="@detailsId-Bolt">
+                                            Activate @await Component.InvokeAsync("Icon", new {symbol = "caret-down"})
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <a asp-page-handler="ReactivateBolt" class="btn btn-link p-0" asp-route-withdrawConfigId="@withdrawConfig.WithdrawConfigId" title="This will clear the card identifier and counter, meaning it can also be configured on a new card (you can always wipe the old card).">Reactivate card</a>
+                                    }
+                                    @if (withdrawConfig.BoltCard?.Index is not null)
+                                    {
+                                        <button type="button" class="btn btn-link p-0 collapsed only-for-js" data-bs-toggle="collapse" data-bs-target="#@detailsId-Bolt-Wipe" aria-expanded="false" aria-controls="@detailsId-Bolt-Wipe">
+                                            Wipe @await Component.InvokeAsync("Icon", new {symbol = "caret-down"})
+                                        </button>
+                                    }
+                                }
+
+                            </td>
                             <td class="text-end">
                                 <button type="button" class="btn btn-link p-0 collapsed only-for-js" data-bs-toggle="collapse" data-bs-target="#@detailsId" aria-expanded="false" aria-controls="@detailsId">
-                                    @await Component.InvokeAsync("Icon", new { symbol = "caret-down" })
+                                    @await Component.InvokeAsync("Icon", new {symbol = "caret-down"})
                                 </button>
                             </td>
                         </tr>
@@ -145,7 +176,7 @@
                             <td colspan="5" class="border-top-0">
                                 <div class="payment-box mx-0 mb-4">
                                     <div class="qr-container" data-clipboard="@lnurl">
-                                        @await Component.InvokeAsync("QRCode", new { data = $"lightning:{lnurl.ToUpperInvariant()}" })
+                                        @await Component.InvokeAsync("QRCode", new {data = $"lightning:{lnurl.ToUpperInvariant()}"})
                                     </div>
                                     <div class="input-group mt-3">
                                         <div class="form-floating">
@@ -153,7 +184,7 @@
                                             <label for="@detailsId-LNURL-Bech32">LNURL (Bech32)</label>
                                         </div>
                                         <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-LNURL-Bech32">
-                                            @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                                            @await Component.InvokeAsync("Icon", new {symbol = "copy"})
                                         </button>
                                     </div>
                                     <div class="input-group mt-3">
@@ -162,7 +193,7 @@
                                             <label for="@detailsId-LNURL-URI">LNURL (URI)</label>
                                         </div>
                                         <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-LNURL-URI">
-                                            @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                                            @await Component.InvokeAsync("Icon", new {symbol = "copy"})
                                         </button>
                                     </div>
                                 </div>
@@ -171,7 +202,52 @@
                                 </div>
                             </td>
                         </tr>
+                        if (withdrawConfig.BoltCard?.Status is BoltCardStatus.PendingActivation)
+                        {
+                            var content = Url.Action("ActivateCard", "BoltCard", new {code = withdrawConfig.BoltCard.BoltCardId}, Request.Scheme);
+                            <tr id="@detailsId-Bolt" class="collapse">
+                                <td colspan="5" class="border-top-0">
+                                    <div class="payment-box mx-0 mb-4">
+                                        <div class="qr-container" data-clipboard="@content">
+                                            @await Component.InvokeAsync("QRCode", new {data = content})
+                                        </div>
+                                        <div class="input-group mt-3">
+                                            <div class="form-floating">
+                                                <input id="@detailsId-Bolt-Uri" class="form-control-plaintext" readonly="readonly" value="@content">
+                                                <label for="@detailsId-Bolt-Uri">Bolt Card Activation Url</label>
+                                            </div>
+                                            <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-Bolt-Uri">
+                                                @await Component.InvokeAsync("Icon", new {symbol = "copy"})
+                                            </button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+@if (withdrawConfig.BoltCard?.Index is not null)
+{
+    var wipeContent = await BoltCardService.GetWipeContent(withdrawConfig.BoltCard.Index.Value, withdrawConfig.BoltCard.CardIdentifier);
+    <tr id="@detailsId-Bolt-Wipe" class="collapse">
+        <td colspan="5" class="border-top-0">
+            <div class="payment-box mx-0 mb-4">
+                <div class="qr-container" data-clipboard="@wipeContent">
+                    @await Component.InvokeAsync("QRCode", new {data = wipeContent})
+                </div>
+                <div class="input-group mt-3">
+                    <div class="form-floating">
+                        <input id="@detailsId-Bolt-Wipe-Json" class="form-control-plaintext" readonly="readonly" value="@wipeContent">
+                        <label for="@detailsId-Bolt-Wipe-Json">Bolt Card Wipe JSON</label>
+                    </div>
+                    <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-Bolt-Wipe-Json">
+                        @await Component.InvokeAsync("Icon", new {symbol = "copy"})
+                    </button>
+                </div>
+            </div>
+        </td>
+    </tr>
+}
                     }
+
                     </tbody>
                 </table>
             </div>
@@ -183,4 +259,4 @@
     </div>
 </div>
 
-<partial name="_Confirm" model="@(new ConfirmModel("Remove withdraw configuration", "This action will remove the withdraw configuration from this wallet. Are you sure?", "Remove"))" />
+<partial name="_Confirm" model="@(new ConfirmModel("Remove withdraw configuration", "This action will remove the withdraw configuration from this wallet. Are you sure?", "Remove"))"/>

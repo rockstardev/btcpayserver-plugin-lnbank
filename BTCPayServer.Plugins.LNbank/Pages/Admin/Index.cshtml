@@ -1,9 +1,8 @@
 @page "/plugins/lnbank/admin"
-@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model BTCPayServer.Plugins.LNbank.Pages.Admin.IndexModel
 
 @{
-    ViewData.SetActivePage(LNbankNavPages.Admin, "LNbank Administration");
+    ViewData.SetActivePage(LNbankNavPages.AdminWallets, "LNbank Administration");
 }
 
 <div class="sticky-header-setup"></div>
@@ -16,6 +15,11 @@
     </div>
 </div>
 
+@if (Model.IsReady)
+{
+    <partial name="_Nav" model="Model.CurrentWallet"/>
+}
+
 @if (Model.TotalNodeBalance < Model.TotalLiabilities)
 {
     <div class="alert alert-warning mb-5" role="alert">
@@ -24,7 +28,7 @@
     </div>
 }
 
-<partial name="_StatusMessage" />
+<partial name="_StatusMessage"/>
 
 @if (Model.WalletsByUserId.Any())
 {

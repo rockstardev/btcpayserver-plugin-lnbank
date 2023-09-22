@@ -2,6 +2,7 @@ using BTCPayServer.Abstractions.Contracts;
 using BTCPayServer.Plugins.LNbank.Authentication;
 using BTCPayServer.Plugins.LNbank.Hooks;
 using BTCPayServer.Plugins.LNbank.Services;
+using BTCPayServer.Plugins.LNbank.Services.BoltCard;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,5 +25,7 @@ public static class AppExtensions
         services.AddSingleton<AuthorizationRequirementHandler>();
         services.AddSingleton<ResolveLightningAddressHandler>();
         services.AddScoped<IAuthorizationHandler, LNbankAuthorizationHandler>();
+        services.AddSingleton<BoltCardService>();
+        services.AddHostedService(sp => sp.GetRequiredService<BoltCardService>());
     }
 }

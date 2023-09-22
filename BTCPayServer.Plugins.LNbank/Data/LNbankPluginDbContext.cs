@@ -1,4 +1,5 @@
 using BTCPayServer.Plugins.LNbank.Data.Models;
+using BTCPayServer.Plugins.LNbank.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace BTCPayServer.Plugins.LNbank.Data;
@@ -17,6 +18,7 @@ public class LNbankPluginDbContext : DbContext
     public DbSet<AccessKey> AccessKeys { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
     public DbSet<WithdrawConfig> WithdrawConfigs { get; set; }
+    public DbSet<BoltCard> BoltCards { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -27,5 +29,6 @@ public class LNbankPluginDbContext : DbContext
         Transaction.OnModelCreating(modelBuilder);
         Wallet.OnModelCreating(modelBuilder);
         WithdrawConfig.OnModelCreating(modelBuilder);
+        BoltCard.OnModelCreating(modelBuilder);
     }
 }

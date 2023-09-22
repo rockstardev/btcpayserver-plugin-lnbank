@@ -6,4 +6,5 @@ public class WithdrawConfigsQuery
     public string WithdrawConfigId { get; set; }
     public bool IncludeWallet { get; set; }
     public bool IncludeTransactions { get; set; }
+    public bool IncludeBoltCard { get; set; }
 }

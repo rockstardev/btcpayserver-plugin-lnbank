@@ -62,6 +62,34 @@ public class WalletService
         return payment?.Status == LightningPaymentStatus.Complete;
     }
 
+    public async Task<Transaction> TopUp(string walletId, LightMoney amount, string description, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var timestamp = DateTimeOffset.UtcNow;
+        var entry = await dbContext.Transactions.AddAsync(
+            new Transaction
+            {
+                WalletId = walletId,
+                InvoiceId = null,
+                Amount = amount,
+                PaymentRequest = "internal",
+                PaymentHash = null,
+                Preimage = null,
+                Description = description,
+                AmountSettled = amount,
+                ExpiresAt = timestamp,
+                CreatedAt = timestamp,
+                PaidAt = timestamp,
+                WithdrawConfigId = null,
+                RoutingFee = null,
+                ExplicitStatus = Transaction.StatusSettled,
+            }, cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return entry.Entity;
+    }
+
     public async Task<Transaction> Receive(Wallet wallet, CreateLightningInvoiceRequest req, string? memo = null,
         CancellationToken cancellationToken = default)
     {

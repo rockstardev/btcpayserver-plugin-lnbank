@@ -1,0 +1,55 @@
+@page "/plugins/lnbank/admin/boltcards"
+@model BTCPayServer.Plugins.LNbank.Pages.Admin.BoltCards
+
+@{
+    ViewData.SetActivePage(LNbankNavPages.AdminBoltCards, "Pending Bolt Cards");
+}
+
+<div class="sticky-header-setup"></div>
+<div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+        <h2 class="my-1">@ViewData["Title"]</h2>
+    </div>
+</div>
+
+<partial name="_Nav" />
+
+@if (Model.PendingCards.Any())
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-5">
+        @foreach (var entry in Model.PendingCards)
+        {
+            var activationUrl = Url.Action("ActivateCard", "BoltCard", new {code = entry.BoltCardId}, Request.Scheme);
+            <div class="col">
+                <div class="card">
+                    <div class="card-header d-flex flex-wrap align-items-baseline justify-content-between gap-2">
+                        <h5 class="card-title mb-0">@entry.WithdrawConfig.Name</h5>
+                        <a asp-page="/Wallets/WithdrawConfigs" asp-route-walletId="@entry.WithdrawConfig.WalletId">
+                            Manage
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="payment-box mx-0">
+                            <div class="qr-container" data-clipboard="@activationUrl">
+                                @await Component.InvokeAsync("QRCode", new { data = activationUrl })
+                            </div>
+                            <div class="input-group mt-3">
+                                <div class="form-floating">
+                                    <input id="@entry.BoltCardId-Bolt" class="form-control-plaintext" readonly="readonly" value="@activationUrl">
+                                    <label for="@entry.BoltCardId-Bolt">Bolt Card Activation URL</label>
+                                </div>
+                                <button type="button" class="btn btn-link" data-clipboard-target="#@entry.BoltCardId-Bolt">
+                                    @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p id="LNbank-Wallets" class="text-secondary">There are no pending bolt cards</p>
+}

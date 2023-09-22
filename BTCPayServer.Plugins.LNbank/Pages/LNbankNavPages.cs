@@ -2,7 +2,9 @@ namespace BTCPayServer.Plugins.LNbank.Pages;
 
 public enum LNbankNavPages
 {
-    Admin,
+    AdminWallets,
+    AdminBulkCreate,
+    AdminBoltCards,
     Wallets,
     Wallet,
     WalletSettings,

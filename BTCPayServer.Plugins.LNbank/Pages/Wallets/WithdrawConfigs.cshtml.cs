@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Constants;
 using BTCPayServer.Data;
 using BTCPayServer.Lightning;
 using BTCPayServer.Plugins.LNbank.Authentication;
 using BTCPayServer.Plugins.LNbank.Data.Models;
+using BTCPayServer.Plugins.LNbank.Services;
+using BTCPayServer.Plugins.LNbank.Services.BoltCard;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -21,6 +22,7 @@ namespace BTCPayServer.Plugins.LNbank.Pages.Wallets;
 public class WithdrawConfigsModel : BasePageModel
 {
     private readonly WithdrawConfigRepository _withdrawConfigRepository;
+    private readonly BoltCardService _boltCardService;
 
     [BindProperty]
     public WithdrawConfigViewModel WithdrawConfig { get; set; }
@@ -30,9 +32,11 @@ public class WithdrawConfigsModel : BasePageModel
         UserManager<ApplicationUser> userManager,
         WithdrawConfigRepository withdrawConfigRepository,
         WalletRepository walletRepository,
-        WalletService walletService) : base(userManager, walletRepository, walletService)
+        WalletService walletService,
+        BoltCardService boltCardService) : base(userManager, walletRepository, walletService)
     {
         _withdrawConfigRepository = withdrawConfigRepository;
+        _boltCardService = boltCardService;
     }
 
     public async Task<IActionResult> OnGetAsync(string walletId)
@@ -119,12 +123,72 @@ public class WithdrawConfigsModel : BasePageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnGetIssueBoltAsync(string walletId, string withdrawConfigId)
+    {
+        if (CurrentWallet == null)
+            return NotFound();
+
+        var withdrawConfig = await _withdrawConfigRepository.GetWithdrawConfig(new WithdrawConfigsQuery
+        {
+            WalletId = walletId,
+            WithdrawConfigId = withdrawConfigId
+        });
+        if (withdrawConfig == null)
+            return NotFound();
+
+        try
+        {
+            var code = await _boltCardService.CreateCard(withdrawConfigId);
+
+            TempData[WellKnownTempData.SuccessMessage] = "Card issuance started, scan the QR code for victory";
+            return RedirectToPage("./WithdrawConfigs", new { walletId });
+        }
+        catch (Exception)
+        {
+            TempData[WellKnownTempData.ErrorMessage] = "Failed to issue bolt card.";
+        }
+
+        WithdrawConfigs = await GetWithdrawConfigs();
+        return Page();
+    }
+
+    public async Task<IActionResult> OnGetReactivateBoltAsync(string walletId, string withdrawConfigId)
+    {
+        if (CurrentWallet == null)
+            return NotFound();
+
+        var withdrawConfig = await _withdrawConfigRepository.GetWithdrawConfig(new WithdrawConfigsQuery
+        {
+            WalletId = walletId,
+            WithdrawConfigId = withdrawConfigId,
+            IncludeBoltCard = true
+        });
+        if (withdrawConfig == null)
+            return NotFound();
+
+        try
+        {
+            await _boltCardService.MarkForReactivation( withdrawConfig.BoltCard.BoltCardId);
+
+            TempData[WellKnownTempData.SuccessMessage] = "Card reactivation started, scan the QR code for victory";
+            return RedirectToPage("./WithdrawConfigs", new { walletId });
+        }
+        catch (Exception)
+        {
+            TempData[WellKnownTempData.ErrorMessage] = "Failed to issue bolt card.";
+        }
+
+        WithdrawConfigs = await GetWithdrawConfigs();
+        return Page();
+    }
+
     private async Task<IEnumerable<WithdrawConfig>> GetWithdrawConfigs()
     {
         return await _withdrawConfigRepository.GetWithdrawConfigs(new WithdrawConfigsQuery
         {
             WalletId = CurrentWallet.WalletId,
-            IncludeTransactions = true
+            IncludeTransactions = true,
+            IncludeBoltCard = true
         });
     }
 }

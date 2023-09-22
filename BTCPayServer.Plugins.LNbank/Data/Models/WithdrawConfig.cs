@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using BTCPayServer.Lightning;
+using BTCPayServer.Plugins.LNbank.Services;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using Microsoft.EntityFrameworkCore;
 
@@ -100,6 +101,7 @@ public class WithdrawConfig
     }
 
     public bool IsSoftDeleted { get; set; }
+    public BoltCard BoltCard { get; set; }
 
     internal static void OnModelCreating(ModelBuilder builder)
     {

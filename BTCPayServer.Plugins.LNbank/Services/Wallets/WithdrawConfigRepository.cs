@@ -42,6 +42,9 @@ public class WithdrawConfigRepository
         if (query.IncludeTransactions)
             queryable = queryable.Include(t => t.Wallet.Transactions).AsNoTracking();
 
+        if (query.IncludeBoltCard)
+            queryable = queryable.Include(t => t.BoltCard).AsNoTracking();
+
         return queryable;
     }
 

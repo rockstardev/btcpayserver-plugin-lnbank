@@ -1,0 +1,54 @@
+@page "/plugins/lnbank/admin/bulk-create"
+@model BulkCreateModel
+
+@{
+    ViewData.SetActivePage(LNbankNavPages.AdminBulkCreate, "Bulk create LNbank wallets");
+}
+
+@section LNbankFoot {
+    <partial name="_ValidationScriptsPartial"/>
+}
+
+<div class="sticky-header-setup"></div>
+<div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+        <h2 class="my-1">@ViewData["Title"]</h2>
+    </div>
+</div>
+
+<partial name="_Nav" />
+
+<div class="row">
+    <div class="col-xl-8 col-xxl-constrain">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="WalletName" class="form-label"></label>
+                <input asp-for="WalletName" class="form-control" autofocus required/>
+                <div class="form-text">Can contain <code>{Index}</code> as placeholder</div>
+                <span asp-validation-for="WalletName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="InitialBalance" class="form-label"></label>
+                <div class="input-group" style="max-width:12rem">
+                    <input asp-for="InitialBalance" class="form-control" min="0" type="number" step="1"/>
+                    <span class="input-group-text" id="InitialBalance-Addon">sats</span>
+                </div>
+                <span asp-validation-for="InitialBalance" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="WalletsToCreate" class="form-label"></label>
+                <input asp-for="WalletsToCreate" class="form-control" type="number" step="1" style="max-width:12rem"/>
+                <span asp-validation-for="WalletsToCreate" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <input asp-for="InitBoltCard" class="form-check-input" type="checkbox">
+                <label asp-for="InitBoltCard" class="form-label"></label>
+                <span asp-validation-for="InitBoltCard" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" id="LNbank-Create"/>
+            </div>
+        </form>
+    </div>
+</div>
