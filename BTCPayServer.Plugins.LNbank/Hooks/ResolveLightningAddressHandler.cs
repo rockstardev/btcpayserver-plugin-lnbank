@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Contracts;
 using BTCPayServer.Plugins.LNbank.Controllers.API;
+using BTCPayServer.Plugins.LNbank.Services;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using LNURL;
 using Microsoft.AspNetCore.Http;
@@ -48,10 +49,10 @@ public class ResolveLightningAddressHandler : IPluginHookFilter
         obj.LNURLPayRequest = new LNURLPayRequest
         {
             Tag = "payRequest",
-            CommentAllowed = 2000,
+            CommentAllowed = LNURLService.CommentLength,
             Metadata = JsonConvert.SerializeObject(metadata.Select(kv => new[] { kv.Key, kv.Value })),
             Callback = new Uri(_linkGenerator.GetUriByAction(
-                action: nameof(LnurlController.LnurlPay),
+                action: nameof(LnurlController.LnurlPayCallback),
                 controller: "Lnurl",
                 values: new { walletId = wallet.WalletId }, request.Scheme, request.Host, request.PathBase) ?? string.Empty)
         };

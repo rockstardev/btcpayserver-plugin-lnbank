@@ -71,7 +71,7 @@
                 <label asp-for="CurrentWallet.LightningAddressIdentifier" class="form-label"></label>
                 <div class="input-group">
                     <input asp-for="CurrentWallet.LightningAddressIdentifier" class="form-control" aria-describedby="LightningAddressIdentifier-Host" />
-                    <span class="input-group-text" id="LightningAddressIdentifier-Host">@Model.CurrentWallet.LightningAddressIdentifier@@@Request.Host</span>
+                    <span class="input-group-text" id="LightningAddressIdentifier-Host">@@@Request.Host</span>
                 </div>
                 <span asp-validation-for="CurrentWallet.LightningAddressIdentifier" class="text-danger"></span>
             </div>

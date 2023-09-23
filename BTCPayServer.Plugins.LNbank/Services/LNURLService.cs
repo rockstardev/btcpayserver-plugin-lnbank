@@ -20,6 +20,9 @@ public class LNURLService
 
     internal const string PayRequestTag = "payRequest";
     internal const string WithdrawRequestTag = "withdrawRequest";
+    internal static readonly LightMoney MinSendable = new(1, LightMoneyUnit.Satoshi);
+    internal static readonly LightMoney MaxSendable = LightMoney.FromUnit(6.12m, LightMoneyUnit.BTC);
+    internal static readonly int CommentLength = 2000;
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly bool _isDevEnv;

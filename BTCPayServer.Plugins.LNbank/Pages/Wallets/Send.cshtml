@@ -52,7 +52,10 @@
                 <div class="form-group">
                     <label asp-for="ExplicitAmount" class="form-label" data-required></label>
                     <div class="input-group">
-                        <input asp-for="ExplicitAmount" class="form-control flex-grow-0 text-end hide-number-spin" type="number" aria-describedby="ExplicitAmount-Addon" max="@Model.CurrentWallet.Balance.ToUnit(LightMoneyUnit.Satoshi)" style="width:15ch;" autofocus required />
+                        <input asp-for="ExplicitAmount" class="form-control flex-grow-0 text-end hide-number-spin"
+                               type="number" aria-describedby="ExplicitAmount-Addon"
+                               max="@Model.CurrentWallet.Balance.ToUnit(LightMoneyUnit.Satoshi)"
+                               style="width:15ch;" autofocus required />
                         <span class="input-group-text" id="ExplicitAmount-Addon">sats</span>
                     </div>
                     <span asp-validation-for="ExplicitAmount" class="text-danger"></span>
@@ -91,11 +94,15 @@
             {
                 <div class="form-group">
                     <label asp-for="ExplicitAmount" class="form-label" data-required></label>
-                    <input asp-for="ExplicitAmount" class="form-control text-end hide-number-spin" type="number"
-                           min="@Model.LnurlPay.MinSendable.ToUnit(LightMoneyUnit.Satoshi)"
-                           max="@Math.Min(Model.CurrentWallet.Balance.ToUnit(LightMoneyUnit.Satoshi),
-                                    Model.LnurlPay.MaxSendable.ToUnit(LightMoneyUnit.Satoshi))"
-                           style="width:15ch;" autofocus required />
+                    <div class="input-group">
+                        <input asp-for="ExplicitAmount" class="form-control flex-grow-0 text-end hide-number-spin"
+                               type="number" aria-describedby="ExplicitAmount-Addon"
+                               min="@Model.LnurlPay.MinSendable.ToUnit(LightMoneyUnit.Satoshi)"
+                               max="@Math.Min(Model.CurrentWallet.Balance.ToUnit(LightMoneyUnit.Satoshi),
+                                        Model.LnurlPay.MaxSendable.ToUnit(LightMoneyUnit.Satoshi))"
+                               style="width:15ch;" autofocus required />
+                        <span class="input-group-text" id="ExplicitAmount-Addon">sats</span>
+                    </div>
                     <div class="form-text text-muted">
                         Minimum: <span data-sensitive>@Helpers.Sats(Model.LnurlPay.MinSendable)</span> /
                         Maximum: <span data-sensitive>@Helpers.Sats(Math.Min(Model.CurrentWallet.Balance, Model.LnurlPay.MaxSendable))</span>
@@ -107,14 +114,14 @@
             {
                 <div class="form-group">
                     <label asp-for="Comment" class="form-label"></label>
-                    <input asp-for="Comment" class="form-control" maxlength="@Model.LnurlPay.CommentAllowed" autofocus style="max-width:70ch;" />
+                    <input asp-for="Comment" class="form-control" maxlength="@Model.LnurlPay.CommentAllowed" style="max-width:70ch;" />
                     <span asp-validation-for="Comment" class="text-danger"></span>
                 </div>
             }
         }
         <div class="form-group">
             <label asp-for="Description" class="form-label"></label>
-            <input asp-for="Description" class="form-control" autofocus style="max-width:70ch;" />
+            <input asp-for="Description" class="form-control" style="max-width:70ch;" />
             <span asp-validation-for="Description" class="text-danger"></span>
         </div>
         <div class="form-group">

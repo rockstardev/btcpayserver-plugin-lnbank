@@ -21,10 +21,6 @@ public class LnurlController : ControllerBase
     private readonly WalletRepository _walletRepository;
     private readonly WithdrawConfigRepository _withdrawConfigRepository;
 
-    private static readonly LightMoney MinSendable = new(1, LightMoneyUnit.Satoshi);
-    private static readonly LightMoney MaxSendable = LightMoney.FromUnit(6.12m, LightMoneyUnit.BTC);
-    private const int CommentLength = 615;
-
     public LnurlController(WalletService walletService, WalletRepository walletRepository, WithdrawConfigRepository withdrawConfigRepository)
     {
         _walletService = walletService;
@@ -67,9 +63,9 @@ public class LnurlController : ControllerBase
             return Ok(payRequest);
         }
 
-        comment = comment?.Truncate(CommentLength);
+        comment = comment?.Truncate(LNURLService.CommentLength);
 
-        if (amount < MinSendable || amount > MaxSendable)
+        if (amount < LNURLService.MinSendable || amount > LNURLService.MaxSendable)
         {
             return BadRequest(GetError("Amount is out of bounds"));
         }
@@ -155,10 +151,10 @@ public class LnurlController : ControllerBase
     private LNURLPayRequest GetPayRequest(string walletId, string metadata) => new()
     {
         Tag = LNURLService.PayRequestTag,
+        MinSendable = LNURLService.MinSendable,
+        MaxSendable = LNURLService.MaxSendable,
+        CommentAllowed = LNURLService.CommentLength,
         Callback = new Uri($"{Request.Scheme}://{Request.Host.ToUriComponent()}{Request.PathBase.ToUriComponent()}/api/v1/lnbank/lnurl/{walletId}/pay-callback"),
-        MinSendable = MinSendable,
-        MaxSendable = MaxSendable,
-        CommentAllowed = CommentLength,
         Metadata = metadata
     };
 
