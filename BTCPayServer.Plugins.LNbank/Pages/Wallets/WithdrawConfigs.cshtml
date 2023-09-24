@@ -2,7 +2,6 @@
 @using BTCPayServer.Plugins.LNbank.Data.Models
 @using BTCPayServer.Abstractions.Models
 @using BTCPayServer.Plugins.LNbank.Extensions
-@using BTCPayServer.Plugins.LNbank.Services
 @using BTCPayServer.Plugins.LNbank.Services.BoltCard
 @using ExchangeSharp
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.WithdrawConfigsModel
@@ -143,28 +142,23 @@
                             <td>
                                 @if (withdrawConfig.BoltCard is null)
                                 {
-                                    <a asp-page-handler="IssueBolt" class="btn btn-link p-0" asp-route-withdrawConfigId="@withdrawConfig.WithdrawConfigId">Issue Bolt Card</a>
+                                    <span class="badge bg-light">Not issued</span>
                                 }
                                 else
                                 {
-                                    if (withdrawConfig.BoltCard?.Status == BoltCardStatus.PendingActivation)
+                                    switch (withdrawConfig.BoltCard?.Status)
                                     {
-                                        <button type="button" class="btn btn-link p-0 collapsed only-for-js" data-bs-toggle="collapse" data-bs-target="#@detailsId-Bolt" aria-expanded="false" aria-controls="@detailsId-Bolt">
-                                            Activate @await Component.InvokeAsync("Icon", new {symbol = "caret-down"})
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <a asp-page-handler="ReactivateBolt" class="btn btn-link p-0" asp-route-withdrawConfigId="@withdrawConfig.WithdrawConfigId" title="This will clear the card identifier and counter, meaning it can also be configured on a new card (you can always wipe the old card).">Reactivate card</a>
-                                    }
-                                    @if (withdrawConfig.BoltCard?.Index is not null)
-                                    {
-                                        <button type="button" class="btn btn-link p-0 collapsed only-for-js" data-bs-toggle="collapse" data-bs-target="#@detailsId-Bolt-Wipe" aria-expanded="false" aria-controls="@detailsId-Bolt-Wipe">
-                                            Wipe @await Component.InvokeAsync("Icon", new {symbol = "caret-down"})
-                                        </button>
+                                        case BoltCardStatus.PendingActivation:
+                                            <span class="badge bg-warning">Needs activation</span>
+                                            break;
+                                        case BoltCardStatus.Inactive:
+                                            <span class="badge bg-light">Inactive</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-success">Active</span>
+                                            break;
                                     }
                                 }
-
                             </td>
                             <td class="text-end">
                                 <button type="button" class="btn btn-link p-0 collapsed only-for-js" data-bs-toggle="collapse" data-bs-target="#@detailsId" aria-expanded="false" aria-controls="@detailsId">
@@ -173,81 +167,98 @@
                             </td>
                         </tr>
                         <tr id="@detailsId" class="collapse">
-                            <td colspan="5" class="border-top-0">
-                                <div class="payment-box mx-0 mb-4">
-                                    <div class="qr-container" data-clipboard="@lnurl">
-                                        @await Component.InvokeAsync("QRCode", new {data = $"lightning:{lnurl.ToUpperInvariant()}"})
-                                    </div>
-                                    <div class="input-group mt-3">
-                                        <div class="form-floating">
-                                            <input id="@detailsId-LNURL-Bech32" class="form-control-plaintext" readonly="readonly" value="@lnurl">
-                                            <label for="@detailsId-LNURL-Bech32">LNURL (Bech32)</label>
-                                        </div>
-                                        <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-LNURL-Bech32">
-                                            @await Component.InvokeAsync("Icon", new {symbol = "copy"})
-                                        </button>
-                                    </div>
-                                    <div class="input-group mt-3">
-                                        <div class="form-floating">
-                                            <input id="@detailsId-LNURL-URI" class="form-control-plaintext" readonly="readonly" value="@lnurlUri">
-                                            <label for="@detailsId-LNURL-URI">LNURL (URI)</label>
-                                        </div>
-                                        <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-LNURL-URI">
-                                            @await Component.InvokeAsync("Icon", new {symbol = "copy"})
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="mt-3">
-                                    <a asp-page-handler="remove" class="btn btn-sm btn-outline-danger" asp-route-withdrawConfigId="@withdrawConfig.WithdrawConfigId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-description="This action will remove the withdraw configuration <strong>@withdrawConfig.Name</strong> from this wallet." data-confirm-input="REMOVE">Remove Withdraw Config</a>
-                                </div>
-                            </td>
-                        </tr>
-                        if (withdrawConfig.BoltCard?.Status is BoltCardStatus.PendingActivation)
-                        {
-                            var content = Url.Action("ActivateCard", "BoltCard", new {code = withdrawConfig.BoltCard.BoltCardId}, Request.Scheme);
-                            <tr id="@detailsId-Bolt" class="collapse">
-                                <td colspan="5" class="border-top-0">
-                                    <div class="payment-box mx-0 mb-4">
-                                        <div class="qr-container" data-clipboard="@content">
-                                            @await Component.InvokeAsync("QRCode", new {data = content})
+                            <td colspan="6" class="border-top-0">
+                                <div class="py-3">
+                                    <h5 class="mb-3">LNURL Withdraw</h5>
+                                    <div class="payment-box mx-0">
+                                        <div class="qr-container" data-clipboard="@lnurl">
+                                            @await Component.InvokeAsync("QRCode", new { data = $"lightning:{lnurl.ToUpperInvariant()}" })
                                         </div>
                                         <div class="input-group mt-3">
                                             <div class="form-floating">
-                                                <input id="@detailsId-Bolt-Uri" class="form-control-plaintext" readonly="readonly" value="@content">
-                                                <label for="@detailsId-Bolt-Uri">Bolt Card Activation Url</label>
+                                                <input id="@detailsId-LNURL-Bech32" class="form-control-plaintext" readonly="readonly" value="@lnurl">
+                                                <label for="@detailsId-LNURL-Bech32">LNURL (Bech32)</label>
                                             </div>
-                                            <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-Bolt-Uri">
-                                                @await Component.InvokeAsync("Icon", new {symbol = "copy"})
+                                            <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-LNURL-Bech32">
+                                                @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                                            </button>
+                                        </div>
+                                        <div class="input-group mt-3">
+                                            <div class="form-floating">
+                                                <input id="@detailsId-LNURL-URI" class="form-control-plaintext" readonly="readonly" value="@lnurlUri">
+                                                <label for="@detailsId-LNURL-URI">LNURL (URI)</label>
+                                            </div>
+                                            <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-LNURL-URI">
+                                                @await Component.InvokeAsync("Icon", new { symbol = "copy" })
                                             </button>
                                         </div>
                                     </div>
-                                </td>
-                            </tr>
-                        }
-@if (withdrawConfig.BoltCard?.Index is not null)
-{
-    var wipeContent = await BoltCardService.GetWipeContent(withdrawConfig.BoltCard.Index.Value, withdrawConfig.BoltCard.CardIdentifier);
-    <tr id="@detailsId-Bolt-Wipe" class="collapse">
-        <td colspan="5" class="border-top-0">
-            <div class="payment-box mx-0 mb-4">
-                <div class="qr-container" data-clipboard="@wipeContent">
-                    @await Component.InvokeAsync("QRCode", new {data = wipeContent})
-                </div>
-                <div class="input-group mt-3">
-                    <div class="form-floating">
-                        <input id="@detailsId-Bolt-Wipe-Json" class="form-control-plaintext" readonly="readonly" value="@wipeContent">
-                        <label for="@detailsId-Bolt-Wipe-Json">Bolt Card Wipe JSON</label>
-                    </div>
-                    <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-Bolt-Wipe-Json">
-                        @await Component.InvokeAsync("Icon", new {symbol = "copy"})
-                    </button>
-                </div>
-            </div>
-        </td>
-    </tr>
-}
-                    }
+                                    <h5 class="mt-5 mb-3">Bolt Card</h5>
+                                    <p>
+                                        Use the Bolt Card Writer App from the
+                                        <a href="https://apps.apple.com/us/app/boltcard-nfc-programmer/id6450968873" target="_blank" rel="noreferrer noopener">Apple App Store</a> or
+                                        <a href="https://play.google.com/store/apps/details?id=com.lightningnfcapp" target="_blank" rel="noreferrer noopener">Google Play Store</a> to manage your
+                                        <a href="https://www.boltcard.org/" target="_blank" rel="noreferrer noopener">Bolt Card</a> keys.
+                                    </p>
 
+                                    @if (withdrawConfig.BoltCard is null)
+                                    {
+                                        <a asp-page-handler="IssueBolt" class="btn btn-primary" asp-route-withdrawConfigId="@withdrawConfig.WithdrawConfigId">Issue Bolt Card</a>
+                                    }
+                                    else
+                                    {
+                                        if (withdrawConfig.BoltCard?.Status == BoltCardStatus.PendingActivation)
+                                        {
+                                            var content = Url.Action("ActivateCard", "BoltCard", new { code = withdrawConfig.BoltCard.BoltCardId }, Request.Scheme);
+                                            <h5 class="mb-3">Activate Bolt Card</h5>
+                                            <div class="payment-box mx-0">
+                                                <div class="qr-container" data-clipboard="@content">
+                                                    @await Component.InvokeAsync("QRCode", new { data = content })
+                                                </div>
+                                                <div class="input-group mt-3">
+                                                    <div class="form-floating">
+                                                        <input id="@detailsId-Bolt-Uri" class="form-control-plaintext" readonly="readonly" value="@content">
+                                                        <label for="@detailsId-Bolt-Uri">Bolt Card Activation Url</label>
+                                                    </div>
+                                                    <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-Bolt-Uri">
+                                                        @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <h5 class="mb-3">Reactivate Bolt Card</h5>
+                                            <p>This will clear the card identifier and counter, meaning it can also be configured on a new card (you can always wipe the old card).</p>
+                                            <a asp-page-handler="ReactivateBolt" asp-route-withdrawConfigId="@withdrawConfig.WithdrawConfigId" class="btn btn-primary">Reactivate</a>
+                                        }
+                                        @if (withdrawConfig.BoltCard?.Index is not null)
+                                        {
+                                            var wipeContent = await BoltCardService.GetWipeContent(withdrawConfig.BoltCard.Index.Value, withdrawConfig.BoltCard.CardIdentifier);
+                                            <h5 class="mb-3 mt-5">Wipe Bolt Card</h5>
+                                            <div class="payment-box mx-0">
+                                                <div class="qr-container" data-clipboard="@wipeContent">
+                                                    @await Component.InvokeAsync("QRCode", new { data = wipeContent })
+                                                </div>
+                                                <div class="input-group mt-3">
+                                                    <div class="form-floating">
+                                                        <input id="@detailsId-Bolt-Wipe-Json" class="form-control-plaintext" readonly="readonly" value="@wipeContent">
+                                                        <label for="@detailsId-Bolt-Wipe-Json">Bolt Card Wipe JSON</label>
+                                                    </div>
+                                                    <button type="button" class="btn btn-link" data-clipboard-target="#@detailsId-Bolt-Wipe-Json">
+                                                        @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                    <div class="mt-5">
+                                        <a asp-page-handler="remove" class="btn btn-sm btn-outline-danger" asp-route-withdrawConfigId="@withdrawConfig.WithdrawConfigId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-description="This action will remove the withdraw configuration <strong>@withdrawConfig.Name</strong> from this wallet." data-confirm-input="REMOVE">Remove Withdraw Config</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                     </tbody>
                 </table>
             </div>

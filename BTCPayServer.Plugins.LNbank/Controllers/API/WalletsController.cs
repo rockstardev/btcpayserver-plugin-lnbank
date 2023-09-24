@@ -20,7 +20,7 @@ using WalletData = BTCPayServer.Plugins.LNbank.Data.API.WalletData;
 namespace BTCPayServer.Plugins.LNbank.Controllers.API;
 
 [ApiController]
-[Route("~/api/v1/lnbank/[controller]")]
+[Route("~/api/v1/lnbank/wallets")]
 public class WalletsController : ControllerBase
 {
     private readonly LNURLService _lnurlService;

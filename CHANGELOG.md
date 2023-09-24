@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix Lightning Address.
+- Bolt Card fixes.
 
 ## [1.7.0]
 

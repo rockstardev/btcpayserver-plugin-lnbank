@@ -21,7 +21,7 @@ using Transaction = BTCPayServer.Plugins.LNbank.Data.Models.Transaction;
 namespace BTCPayServer.Plugins.LNbank.Controllers.API;
 
 [ApiController]
-[Route("~/plugins/lnbank/api/[controller]")]
+[Route("~/plugins/lnbank/api/lndhub")]
 [Authorize(AuthenticationSchemes = LNbankAuthenticationSchemes.AccessKey)]
 public class LndhubController : ControllerBase
 {

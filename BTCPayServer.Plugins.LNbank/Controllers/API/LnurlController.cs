@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 namespace BTCPayServer.Plugins.LNbank.Controllers.API;
 
 [ApiController]
-[Route("~/api/v1/lnbank/[controller]")]
+[Route("~/plugins/lnbank/api/lnurl")]
 public class LnurlController : ControllerBase
 {
     private readonly WalletService _walletService;

@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 namespace BTCPayServer.Plugins.LNbank.Controllers.API;
 
 [ApiController]
-[Route("~/api/v1/lnbank/[controller]")]
+[Route("~/plugins/lnbank/api/boltcard")]
 public class BoltCardController : ControllerBase
 {
     private readonly BoltCardService _boltCardService;
@@ -38,7 +38,7 @@ public class BoltCardController : ControllerBase
         }
     }
 
-    [HttpGet("pay/cb")]
+    [HttpGet("pay-callback")]
     public async Task<IActionResult> BoltCardPayCallback(string pr, string k1)
     {
         try
@@ -50,7 +50,7 @@ public class BoltCardController : ControllerBase
                 case LightningPaymentStatus.Unknown:
                 case LightningPaymentStatus.Pending:
                     return Ok(new LNUrlStatusResponse
-                        {Status = "OK", Reason = $"The payment status is {transaction.Status}"});
+                        { Status = "OK", Reason = $"The payment status is {transaction.Status}" });
                 case LightningPaymentStatus.Complete:
                     return Ok(new LNUrlStatusResponse {Status = "OK"});
                 case LightningPaymentStatus.Failed:
@@ -71,7 +71,7 @@ public class BoltCardController : ControllerBase
         {
             var card = await _boltCardService.IssueCard(code);
 
-            return Ok(new NewCardResponse()
+            return Ok(new NewCardResponse
             {
                 CardName = card.card.WithdrawConfig.Name,
                 K0 = Convert.ToHexString(
@@ -87,7 +87,7 @@ public class BoltCardController : ControllerBase
                 LNURLW = Url.Action("BoltCardPay", "BoltCard", new
                 {
                     card.group
-                }, Request.Scheme)
+                }, "lnurlw")
             });
         }
         catch (Exception e)
