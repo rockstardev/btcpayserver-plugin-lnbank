@@ -3,7 +3,6 @@
 @using BTCPayServer.Abstractions.Models
 @using BTCPayServer.Plugins.LNbank.Extensions
 @using BTCPayServer.Plugins.LNbank.Services.BoltCard
-@using ExchangeSharp
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.WithdrawConfigsModel
 @inject BoltCardService BoltCardService
 
@@ -12,6 +11,7 @@
     var reuseTypeOptions = new SelectList(typeof(WithdrawConfigReuseType).GetEnumNames().Select(o =>
         new SelectListItem(typeof(WithdrawConfigReuseType).DisplayName(o), o)),
         nameof(SelectListItem.Value), nameof(SelectListItem.Text), Model.WithdrawConfig.ReuseType.ToString());
+    var selectedId = Request.Query.ContainsKey("withdrawConfigId") ? Request.Query["withdrawConfigId"].ToString() : null;
 }
 
 @section LNbankFoot {
@@ -20,6 +20,7 @@
 
 <partial name="_WalletHeader" model="Model.CurrentWallet"/>
 <partial name="_Nav" model="Model.CurrentWallet"/>
+<partial name="_StatusMessage"/>
 
 <div class="row">
     <div class="col-xxl-constrain">
@@ -95,7 +96,7 @@
                         <th>Reuse</th>
                         <th>Max total</th>
                         <th>Max per use</th>
-                        <th>Bolt card</th>
+                        <th>Bolt Card</th>
                         <th></th>
                     </tr>
                     </thead>
@@ -110,6 +111,7 @@
                         var lnurl = LNURL.LNURL.EncodeUri(lnurlEndpoint, "withdrawRequest", true).ToString().Replace("lightning:", "");
                         var lnurlUri = LNURL.LNURL.EncodeUri(lnurlEndpoint, "withdrawRequest", false).ToString();
                         var detailsId = $"LNbank-WithdrawConfig-Details-{withdrawConfig.WithdrawConfigId}";
+                        var isActive = selectedId == withdrawConfig.WithdrawConfigId;
                         <tr>
                             <td>@withdrawConfig.Name</td>
                             <td>
@@ -119,7 +121,7 @@
                                 }
                                 else
                                 {
-                                    <span>@withdrawConfig.Limit @typeof(WithdrawConfigReuseType).DisplayName(withdrawConfig.ReuseType.ToString()).ToStringLowerInvariant()</span>
+                                    <span>@withdrawConfig.Limit @typeof(WithdrawConfigReuseType).DisplayName(withdrawConfig.ReuseType.ToString()).ToLowerInvariant()</span>
                                     <span>(@withdrawConfig.GetRemainingUsages() remaining@(withdrawConfig.ReuseType == WithdrawConfigReuseType.Total ? "" : " in interval"))</span>
                                 }
                             </td>
@@ -161,12 +163,12 @@
                                 }
                             </td>
                             <td class="text-end">
-                                <button type="button" class="btn btn-link p-0 collapsed only-for-js" data-bs-toggle="collapse" data-bs-target="#@detailsId" aria-expanded="false" aria-controls="@detailsId">
+                                <button type="button" class="btn btn-link p-0 collapsed only-for-js" data-bs-toggle="collapse" data-bs-target="#@detailsId" aria-expanded="@(isActive ? "true" : "false")" aria-controls="@detailsId">
                                     @await Component.InvokeAsync("Icon", new {symbol = "caret-down"})
                                 </button>
                             </td>
                         </tr>
-                        <tr id="@detailsId" class="collapse">
+                        <tr id="@detailsId" class="collapse@(isActive ? " show" : "")">
                             <td colspan="6" class="border-top-0">
                                 <div class="py-3">
                                     <h5 class="mb-3">LNURL Withdraw</h5>

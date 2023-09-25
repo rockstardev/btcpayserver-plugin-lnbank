@@ -1,8 +1,6 @@
 @page "/plugins/lnbank/wallets/{walletId}/transactions/details/{transactionId}"
 @inject BTCPayServer.Abstractions.Services.Safe Safe
 @using BTCPayServer.Plugins.LNbank.Authentication
-@using Microsoft.AspNetCore.Mvc.TagHelpers
-@using BTCPayServer.Abstractions.TagHelpers
 @using BTCPayServer.Abstractions.Models
 @model BTCPayServer.Plugins.LNbank.Pages.Transactions.DetailsModel
 
@@ -12,6 +10,7 @@
 }
 
 <partial name="_WalletHeader" model="Model.CurrentWallet"/>
+<partial name="_StatusMessage"/>
 
 <h2 id="LNbank-TransactionTitle">@ViewData["Title"]</h2>
 @if (Model.Transaction.IsPaid || Model.Transaction.IsSettled)

@@ -138,10 +138,10 @@ public class WithdrawConfigsModel : BasePageModel
 
         try
         {
-            var code = await _boltCardService.CreateCard(withdrawConfigId);
+            await _boltCardService.CreateCard(withdrawConfigId);
 
-            TempData[WellKnownTempData.SuccessMessage] = "Card issuance started, scan the QR code for victory";
-            return RedirectToPage("./WithdrawConfigs", new { walletId });
+            TempData[WellKnownTempData.SuccessMessage] = "Card issuance started, scan the QR code for activation.";
+            return RedirectToPage("./WithdrawConfigs", new { walletId, withdrawConfigId });
         }
         catch (Exception)
         {
@@ -168,10 +168,10 @@ public class WithdrawConfigsModel : BasePageModel
 
         try
         {
-            await _boltCardService.MarkForReactivation( withdrawConfig.BoltCard.BoltCardId);
+            await _boltCardService.MarkForReactivation(withdrawConfig.BoltCard.BoltCardId);
 
-            TempData[WellKnownTempData.SuccessMessage] = "Card reactivation started, scan the QR code for victory";
-            return RedirectToPage("./WithdrawConfigs", new { walletId });
+            TempData[WellKnownTempData.SuccessMessage] = "Card reactivation started, scan the QR code for activation.";
+            return RedirectToPage("./WithdrawConfigs", new { walletId, withdrawConfigId });
         }
         catch (Exception)
         {
