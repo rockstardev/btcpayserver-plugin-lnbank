@@ -9,7 +9,7 @@
     <Product>LNbank</Product>
     <Description>Use the BTCPay Server Lightning node in custodial mode and give users access via custodial layer 3 wallets.</Description>
     <Authors>d11n</Authors>
-    <Version>1.7.2-pre.1</Version>
+    <Version>1.7.2-pre.2</Version>
   </PropertyGroup>
 
   <!-- Plugin development properties -->
