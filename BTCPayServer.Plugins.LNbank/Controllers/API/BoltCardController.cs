@@ -9,6 +9,7 @@ using BTCPayServer.Plugins.LNbank.Services;
 using BTCPayServer.Plugins.LNbank.Services.BoltCard;
 using LNURL;
 using Microsoft.AspNetCore.Mvc;
+using NBitcoin.Altcoins.Elements;
 using Newtonsoft.Json;
 
 namespace BTCPayServer.Plugins.LNbank.Controllers.API;
@@ -74,26 +75,24 @@ public class BoltCardController : ControllerBase
             return Ok(new NewCardResponse
             {
                 CardName = card.card.WithdrawConfig.Name,
-                K0 = Convert.ToHexString(
-                    card.masterSeed.DeriveChild(card.card.Index + "k0").Key.ToBytes().Take(16).ToArray()),
-                K1 = Convert.ToHexString(
-                    card.masterSeed.DeriveChild(card.card.Index + "k1").Key.ToBytes().Take(16).ToArray()),
-                K2 = Convert.ToHexString(
-                    card.masterSeed.DeriveChild(card.card.Index + "k2").Key.ToBytes().Take(16).ToArray()),
-                K3 = Convert.ToHexString(
-                    card.masterSeed.DeriveChild(card.card.Index + "k3").Key.ToBytes().Take(16).ToArray()),
-                K4 = Convert.ToHexString(
-                    card.masterSeed.DeriveChild(card.card.Index + "k4").Key.ToBytes().Take(16).ToArray()),
-                LNURLW = Url.Action("BoltCardPay", "BoltCard", new
-                {
-                    card.group
-                }, "lnurlw")
+                K0 = ToHexString(card, "k0"),
+                K1 = ToHexString(card,"k1"),
+                K2 = ToHexString(card, "k2"),
+                K3 = ToHexString(card, "k3"),
+                K4 = ToHexString(card, "k4"),
+                LNURLW = Url.Action("BoltCardPay", "BoltCard", new { card.group }, "lnurlw")
             });
         }
         catch (Exception e)
         {
             return BadRequest(e.Message);
         }
+    }
+
+    private static string ToHexString((BoltCard card, Slip21Node masterSeed, int group) card, string field)
+    {
+        return Convert.ToHexString(
+            card.masterSeed.DeriveChild(card.card.Index + field).Key.ToBytes().Take(16).ToArray());
     }
 
     public class NewCardResponse
@@ -128,7 +127,7 @@ public class BoltCardController : ControllerBase
             MinWithdrawable = remaining > oneSat ? oneSat : LightMoney.Zero,
             MaxWithdrawable = remaining,
             CurrentBalance = remaining,
-            Callback = new Uri(Url.Action("BoltCardPayCallback", "BoltCard", null, Request.Scheme))
+            Callback = new Uri(Url.Action("BoltCardPayCallback", "BoltCard", null, "lnurlw"))
         };
         return request;
     }

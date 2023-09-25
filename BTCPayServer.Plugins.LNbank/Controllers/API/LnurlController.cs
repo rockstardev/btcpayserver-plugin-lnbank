@@ -110,7 +110,7 @@ public class LnurlController : ControllerBase
         });
         if (withdrawConfig == null)
         {
-            return BadRequest(GetError($"The withdraw configuration was not found"));
+            return BadRequest(GetError("The withdraw configuration was not found"));
         }
 
         var request = GetWithdrawRequest(withdrawConfig);

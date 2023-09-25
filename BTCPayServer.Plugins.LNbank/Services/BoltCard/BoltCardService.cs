@@ -199,7 +199,6 @@ public class BoltCardService : EventHostedServiceBase
         var lowerBound = group * settings.GroupSize;
         var upperBound = lowerBound + settings.GroupSize - 1;
 
-
         (string uid, uint counter, byte[] rawUid, byte[] rawCtr, byte[] c)? boltCardMatch = null;
         int i;
         for (i = lowerBound; i <= upperBound; i++)
@@ -213,7 +212,7 @@ public class BoltCardService : EventHostedServiceBase
             cancellationToken.ThrowIfCancellationRequested();
         }
 
-        if(boltCardMatch is null)
+        if (boltCardMatch is null)
             throw new Exception("No matching card found");
 
         var semaphore = _verificationSemaphores.GetOrAdd(i, new SemaphoreSlim(1, 1));
@@ -228,10 +227,10 @@ public class BoltCardService : EventHostedServiceBase
             if (matchedCard is null)
                 throw new Exception("No matching card found", null);
 
-            if(matchedCard.Status != BoltCardStatus.Active)
+            if (matchedCard.Status != BoltCardStatus.Active)
                 throw new Exception("Card is not active", null);
 
-            if(matchedCard.Counter >= boltCardMatch.Value.counter)
+            if (matchedCard.Counter >= boltCardMatch.Value.counter)
                 throw new Exception("Counter is too low", null);
 
             matchedCard.CardIdentifier ??= boltCardMatch.Value.uid;
