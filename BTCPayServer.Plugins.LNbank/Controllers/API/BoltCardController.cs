@@ -76,11 +76,14 @@ public class BoltCardController : ControllerBase
             {
                 CardName = card.card.WithdrawConfig.Name,
                 K0 = ToHexString(card, "k0"),
-                K1 = ToHexString(card,"k1"),
+                K1 = ToHexString(card, "k1"),
                 K2 = ToHexString(card, "k2"),
                 K3 = ToHexString(card, "k3"),
                 K4 = ToHexString(card, "k4"),
-                LNURLW = Url.Action("BoltCardPay", "BoltCard", new { card.group }, "lnurlw")
+                LNURLW = Url.Action("BoltCardPay", "BoltCard", new
+                {
+                    group =  card.group == 0? (int?) null: card.group
+                }, "lnurlw")
             });
         }
         catch (Exception e)

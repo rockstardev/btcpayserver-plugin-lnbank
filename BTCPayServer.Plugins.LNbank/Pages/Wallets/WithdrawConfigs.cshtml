@@ -236,7 +236,7 @@
                                         }
                                         @if (withdrawConfig.BoltCard?.Index is not null)
                                         {
-                                            var wipeContent = await BoltCardService.GetWipeContent(withdrawConfig.BoltCard.Index.Value, withdrawConfig.BoltCard.CardIdentifier);
+                                            var wipeContent = await BoltCardService.GetWipeContent(withdrawConfig.BoltCard.Index.Value);
                                             <h5 class="mb-3 mt-5">Wipe Bolt Card</h5>
                                             <div class="payment-box mx-0">
                                                 <div class="qr-container" data-clipboard="@wipeContent">

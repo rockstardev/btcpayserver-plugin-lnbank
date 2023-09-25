@@ -90,7 +90,7 @@ public class BoltCardService : EventHostedServiceBase
         return (int) (await Task.WhenAll(Enumerable.Range(0, 100).Select(_ => Task.Run(OneSecondOfCompute)))).Average();
     }
 
-    public async Task<string> GetWipeContent(int index, string cardIdentifier)
+    public async Task<string> GetWipeContent(int index)
     {
         var settings = await GetSettings();
         var slip21Node = settings.Slip21Node();
