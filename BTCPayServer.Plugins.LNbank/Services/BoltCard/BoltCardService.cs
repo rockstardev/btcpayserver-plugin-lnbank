@@ -223,6 +223,8 @@ public class BoltCardService : EventHostedServiceBase
 
             matchedCard = await dbContext.BoltCards
                 .Include(card => card.WithdrawConfig)
+                .ThenInclude(config => config.Wallet)
+                .ThenInclude(wallet => wallet.Transactions)
                 .FirstOrDefaultAsync(card => card.Index == i, cancellationToken);
 
             if (matchedCard is null)
