@@ -46,7 +46,7 @@ public class BoltCardController : ControllerBase
     }
 
     [HttpGet("pay-callback")]
-    public async Task<IActionResult> BoltCardPayCallback(string pr, string k1)
+    public async Task<IActionResult> BoltCardPayCallback([FromQuery] string pr, [FromQuery] string k1)
     {
         try
         {
