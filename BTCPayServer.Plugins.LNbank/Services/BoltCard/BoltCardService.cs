@@ -43,7 +43,7 @@ public class BoltCardService : EventHostedServiceBase
 
     private readonly SemaphoreSlim _settingsSemaphore = new(1, 1);
 
-    public async Task<BoltCardSettings> GetSettings()
+    private async Task<BoltCardSettings> GetSettings()
     {
         await _settingsSemaphore.WaitAsync();
         var settings = await _settingsRepository.GetSettingAsync<BoltCardSettings>(nameof(BoltCardSettings));

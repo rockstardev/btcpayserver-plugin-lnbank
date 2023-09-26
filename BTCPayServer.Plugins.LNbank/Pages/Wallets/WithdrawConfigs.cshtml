@@ -1,7 +1,6 @@
 @page "/plugins/lnbank/wallets/{walletId}/withdraw-configs/{handler?}"
 @using BTCPayServer.Plugins.LNbank.Data.Models
 @using BTCPayServer.Abstractions.Models
-@using BTCPayServer.Plugins.LNbank.Authentication
 @using BTCPayServer.Plugins.LNbank.Extensions
 @using BTCPayServer.Plugins.LNbank.Services.BoltCard
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.WithdrawConfigsModel
@@ -150,7 +149,7 @@
                                 }
                                 else
                                 {
-                                    switch (boltCard?.Status)
+                                    switch (boltCard.Status)
                                     {
                                         case BoltCardStatus.PendingActivation:
                                             <span class="badge bg-warning">Needs activation</span>
@@ -238,9 +237,6 @@
                                         @if (boltCard.Index is not null)
                                         {
                                             var wipeContent = await BoltCardService.GetWipeContent(boltCard.Index.Value);
-                                            var settings = await BoltCardService.GetSettings();
-                                            var slip21 = settings.Slip21Node();
-                                            var index = boltCard.Index.Value;
                                             <h5 class="mb-3 mt-5">Wipe Bolt Card</h5>
                                             <div class="payment-box mx-0">
                                                 <div class="qr-container" data-clipboard="@wipeContent">
@@ -255,19 +251,6 @@
                                                         @await Component.InvokeAsync("Icon", new { symbol = "copy" })
                                                     </button>
                                                 </div>
-                                            </div>
-                                            <div permission="@LNbankPolicies.CanManageLNbank" class="mb-3 mt-5">
-                                                <h5>Debug Info</h5>
-                                                <dl class="row">
-                                                    <dt class="col-sm-3 col-xl-2">Index</dt>
-                                                    <dd class="col-sm-9 col-xl-10">@index</dd>
-                                                    <dt class="col-sm-3 col-xl-2">Master Seed</dt>
-                                                    <dd class="col-sm-9 col-xl-10 text-wrap">@settings.MasterSeed</dd>
-                                                    <dt class="col-sm-3 col-xl-2">k1</dt>
-                                                    <dd class="col-sm-9 col-xl-10">@BoltCardService.ToHexString(slip21, index, "k1")</dd>
-                                                    <dt class="col-sm-3 col-xl-2">k2</dt>
-                                                    <dd class="col-sm-9 col-xl-10">@BoltCardService.ToHexString(slip21, index, "k2")</dd>
-                                                </dl>
                                             </div>
                                         }
                                     }

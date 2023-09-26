@@ -65,9 +65,10 @@ public class BoltCardController : ControllerBase
                     return BadRequest(GetError("Payment request could not be paid"));
             }
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
-            return BadRequest(GetError(e.Message));
+            _logger.LogError(exception,"Bolt Card payment failed: {Error} (K1: {k1}, Payment Request: {pr})", exception.Message, k1, pr);
+            return BadRequest(GetError(exception.Message));
         }
     }
 
