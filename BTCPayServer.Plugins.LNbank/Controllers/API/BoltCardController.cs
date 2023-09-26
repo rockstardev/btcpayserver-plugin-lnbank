@@ -76,7 +76,7 @@ public class BoltCardController : ControllerBase
     {
         try
         {
-            var result = await _boltCardService.VerifyTap(Request.GetCurrentUrl(), group, cancellationToken);
+            var result = await _boltCardService.VerifyTap(Request.GetCurrentUrl() + Request.QueryString, group, cancellationToken);
             return Ok(GetWithdrawRequest(result.Item1.WithdrawConfig, result.authorizationCode));
         }
         catch (Exception e)
@@ -128,7 +128,7 @@ public class BoltCardController : ControllerBase
                 K4 = BoltCardService.ToHexString(card.masterSeed, index, "k4"),
                 LNURLW = Url.Action("BoltCardPay", "BoltCard", new
                 {
-                    group =  card.group == 0? (int?) null: card.group
+                    group =  card.group == 0 ? (int?)null : card.group
                 }, "lnurlw")
             });
         }

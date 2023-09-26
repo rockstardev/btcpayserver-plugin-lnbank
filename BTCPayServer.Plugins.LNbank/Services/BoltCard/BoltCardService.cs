@@ -22,7 +22,6 @@ namespace BTCPayServer.Plugins.LNbank.Services.BoltCard;
 public class BoltCardService : EventHostedServiceBase
 {
     private readonly ConcurrentDictionary<int, SemaphoreSlim> _verificationSemaphores = new();
-    private readonly ILogger<BoltCardService> _logger;
     private readonly ISettingsRepository _settingsRepository;
     private readonly LNbankPluginDbContextFactory _dbContextFactory;
     private readonly IMemoryCache _memoryCache;
@@ -36,7 +35,6 @@ public class BoltCardService : EventHostedServiceBase
         IMemoryCache memoryCache,
         WalletService walletService) : base(eventAggregator, logger)
     {
-        _logger = logger;
         _settingsRepository = settingsRepository;
         _dbContextFactory = dbContextFactory;
         _memoryCache = memoryCache;
@@ -200,8 +198,6 @@ public class BoltCardService : EventHostedServiceBase
         var lowerBound = group * settings.GroupSize;
         var upperBound = lowerBound + settings.GroupSize - 1;
 
-        _logger.LogInformation("Bolt Card tap verification for URL: {Url} and Group: {Group} ({LowerBound} - {UpperBound})", url, group, lowerBound, upperBound);
-
         (string uid, uint counter, byte[] rawUid, byte[] rawCtr, byte[] c)? boltCardMatch = null;
         int i;
         for (i = lowerBound; i <= upperBound; i++)
@@ -252,11 +248,6 @@ public class BoltCardService : EventHostedServiceBase
             }
             matchedCard.Counter = (int)boltCardMatch.Value.counter;
             await dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (Exception e)
-        {
-            _logger.LogInformation("Bolt Card tap verification failed: {Error} (URL: {Url}, Group: {Group})", e.Message, url, group);
-            throw;
         }
         finally
         {
