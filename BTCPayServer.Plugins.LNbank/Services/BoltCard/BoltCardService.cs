@@ -200,6 +200,8 @@ public class BoltCardService : EventHostedServiceBase
         var lowerBound = group * settings.GroupSize;
         var upperBound = lowerBound + settings.GroupSize - 1;
 
+        _logger.LogInformation("Bolt Card tap verification for URL: {Url} and Group: {Group} ({LowerBound} - {UpperBound})", url, group, lowerBound, upperBound);
+
         (string uid, uint counter, byte[] rawUid, byte[] rawCtr, byte[] c)? boltCardMatch = null;
         int i;
         for (i = lowerBound; i <= upperBound; i++)
@@ -217,13 +219,13 @@ public class BoltCardService : EventHostedServiceBase
             throw new Exception("No matching card found");
 
         var semaphore = _verificationSemaphores.GetOrAdd(i, new SemaphoreSlim(1, 1));
-        await semaphore.WaitAsync(cancellationToken);  // Wait for the semaphore if it's locked by another task
+        await semaphore.WaitAsync(cancellationToken); // Wait for the semaphore if it's locked by another task
         Data.Models.BoltCard matchedCard;
         try
         {
             await using var dbContext = _dbContextFactory.CreateContext();
 
-            matchedCard = await dbContext.BoltCards.AsNoTracking()
+            matchedCard = await dbContext.BoltCards
                 .Include(card => card.WithdrawConfig)
                 .FirstOrDefaultAsync(card => card.Index == i, cancellationToken);
 
