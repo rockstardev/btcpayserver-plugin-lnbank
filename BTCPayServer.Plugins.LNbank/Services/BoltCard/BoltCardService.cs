@@ -202,10 +202,8 @@ public class BoltCardService : EventHostedServiceBase
         int i;
         for (i = lowerBound; i <= upperBound; i++)
         {
-            var k1 = slipNode.DeriveChild(i + "k1").Key.ToBytes().Take(16)
-                .ToArray();
-            boltCardMatch =
-                BoltCardHelper.ExtractBoltCardFromRequest(new Uri(url), k1, out var error);
+            var k1 = slipNode.DeriveChild(i + "k1").Key.ToBytes().Take(16).ToArray();
+            boltCardMatch = BoltCardHelper.ExtractBoltCardFromRequest(new Uri(url), k1, out var error);
             if (error is null && boltCardMatch is not null)
                 break;
             cancellationToken.ThrowIfCancellationRequested();
@@ -216,6 +214,8 @@ public class BoltCardService : EventHostedServiceBase
 
         var semaphore = _verificationSemaphores.GetOrAdd(i, new SemaphoreSlim(1, 1));
         await semaphore.WaitAsync(cancellationToken); // Wait for the semaphore if it's locked by another task
+
+        var boltCard = boltCardMatch.Value;
         Data.Models.BoltCard matchedCard;
         try
         {
@@ -231,22 +231,19 @@ public class BoltCardService : EventHostedServiceBase
             if (matchedCard.Status != BoltCardStatus.Active)
                 throw new Exception("Card is not active", null);
 
-            if (matchedCard.Counter >= boltCardMatch.Value.counter)
+            if (matchedCard.Counter >= boltCard.counter)
                 throw new Exception("Counter is too low", null);
 
-            matchedCard.CardIdentifier ??= boltCardMatch.Value.uid;
-            if (matchedCard.CardIdentifier != boltCardMatch.Value.uid)
+            matchedCard.CardIdentifier ??= boltCard.uid;
+            if (matchedCard.CardIdentifier != boltCard.uid)
                 throw new Exception("Card mismatch", null);
 
-            var k2 =  slipNode.DeriveChild(i + "k2").Key.ToBytes().Take(16)
-                .ToArray();
-
-            if (!BoltCardHelper.CheckCmac(boltCardMatch.Value.rawUid, boltCardMatch.Value.rawCtr, k2,
-                    boltCardMatch.Value.c, out var error2))
+            var k2 = slipNode.DeriveChild(i + "k2").Key.ToBytes().Take(16).ToArray();
+            if (!BoltCardHelper.CheckCmac(boltCard.rawUid, boltCard.rawCtr, k2, boltCard.c, out var error2))
             {
                 throw new Exception($"C invalid: {error2}", null);
             }
-            matchedCard.Counter = (int)boltCardMatch.Value.counter;
+            matchedCard.Counter = (int)boltCard.counter;
             await dbContext.SaveChangesAsync(cancellationToken);
         }
         finally

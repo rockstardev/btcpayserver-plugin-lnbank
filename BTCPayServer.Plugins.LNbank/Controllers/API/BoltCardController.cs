@@ -10,6 +10,7 @@ using BTCPayServer.Plugins.LNbank.Services.BoltCard;
 using LNURL;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
 
@@ -20,12 +21,15 @@ namespace BTCPayServer.Plugins.LNbank.Controllers.API;
 public class BoltCardController : ControllerBase
 {
     private readonly BoltCardService _boltCardService;
+    private readonly ILogger<BoltCardController> _logger;
 
-    public BoltCardController(BoltCardService boltCardService)
+    public BoltCardController(BoltCardService boltCardService, ILogger<BoltCardController> logger)
     {
         _boltCardService = boltCardService;
+        _logger = logger;
     }
 
+    /*
     [HttpGet("debug/{p}")]
     public async Task<IActionResult> GetUIDAndCounterAndIndex(string p, [FromServices] LNbankPluginDbContextFactory dbContextFactory)
     {
@@ -70,18 +74,21 @@ public class BoltCardController : ControllerBase
                 savedCounter = boltCard?.Counter
             });
     }
+    */
 
     [HttpGet("pay/{group?}")]
     public async Task<IActionResult> BoltCardPay(int group = 0, CancellationToken cancellationToken = default)
     {
+        var url = Request.GetCurrentUrl() + Request.QueryString;
         try
         {
-            var result = await _boltCardService.VerifyTap(Request.GetCurrentUrl() + Request.QueryString, group, cancellationToken);
+            var result = await _boltCardService.VerifyTap(url, group, cancellationToken);
             return Ok(GetWithdrawRequest(result.Item1.WithdrawConfig, result.authorizationCode));
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
-            return BadRequest(GetError(e.Message));
+            _logger.LogError(exception,"Bolt Card tap verification failed: {Error} (URL: {Url}, Group: {Group})", exception.Message, url, group);
+            return BadRequest(GetError(exception.Message));
         }
     }
 
