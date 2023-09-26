@@ -35,7 +35,11 @@
 <partial name="_WalletHeader" model="Model.CurrentWallet"/>
 <partial name="_StatusMessage"/>
 
-@if (Model.HistogramData != null)
+@if (Model.WithdrawConfig != null)
+{
+    <h4 class="mb-4">Transactions for Withdraw Config "@Model.WithdrawConfig.Name"</h4>
+}
+else if (Model.HistogramData != null)
 {
     <div id="LNbankWalletBalance-@Model.CurrentWallet.WalletId" class="widget lnbank-wallet-balance">
         <div class="d-flex gap-3 align-items-center justify-content-between mb-2">
@@ -149,6 +153,12 @@
                         </td>
                         <td>
                             <div class="d-inline-flex align-items-center gap-2">
+                                @if (!string.IsNullOrEmpty(transaction.WithdrawConfigId))
+                                {
+                                    <a asp-page="/Wallets/WithdrawConfigs" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-fragment="WithdrawConfig-@transaction.WithdrawConfigId" data-bs-toggle="tooltip" title="Via withdraw configuration">
+                                        <vc:icon symbol="pull-payments"/>
+                                    </a>
+                                }
                                 @if (!string.IsNullOrEmpty(transaction.Description))
                                 {
                                     <span class="transaction-description text-break">@transaction.Description</span>

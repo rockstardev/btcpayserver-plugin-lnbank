@@ -166,18 +166,13 @@ public class WithdrawConfigsModel : BasePageModel
         if (withdrawConfig == null)
             return NotFound();
 
-        try
+        if (await _boltCardService.MarkForReactivation(withdrawConfig.BoltCard.BoltCardId))
         {
-            await _boltCardService.MarkForReactivation(withdrawConfig.BoltCard.BoltCardId);
-
             TempData[WellKnownTempData.SuccessMessage] = "Card reactivation started, scan the QR code for activation.";
             return RedirectToPage("./WithdrawConfigs", new { walletId, withdrawConfigId });
         }
-        catch (Exception)
-        {
-            TempData[WellKnownTempData.ErrorMessage] = "Failed to issue bolt card.";
-        }
 
+        TempData[WellKnownTempData.ErrorMessage] = "Failed to reactivate bolt card.";
         WithdrawConfigs = await GetWithdrawConfigs();
         return Page();
     }

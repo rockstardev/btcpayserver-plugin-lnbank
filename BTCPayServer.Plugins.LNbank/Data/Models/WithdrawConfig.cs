@@ -48,13 +48,16 @@ public class WithdrawConfig
     [DisplayName("Total spendable amount")]
     public LightMoney MaxTotal { get; set; }
 
+    public ICollection<Transaction> GetTransactions()
+    {
+        return Wallet.Transactions.Where(t =>
+            t.WithdrawConfigId == WithdrawConfigId && t.AmountSettled != null).ToList();
+    }
+
     private ICollection<Transaction> GetPaymentsInInterval()
     {
-        var payments = Wallet.Transactions.Where(t =>
-            t.WithdrawConfigId == WithdrawConfigId && t.AmountSettled != null);
-
         if (ReuseType is WithdrawConfigReuseType.Unlimited or WithdrawConfigReuseType.Total)
-            return payments.ToList();
+            return GetTransactions().ToList();
 
         var days = ReuseType switch
         {
@@ -64,8 +67,17 @@ public class WithdrawConfig
             _ => throw new ArgumentOutOfRangeException()
         };
         var interval = DateTime.UtcNow.AddDays(days * -1);
-        return payments.Where(t => t.CreatedAt > interval).ToList();
+        return GetTransactions().Where(t => t.CreatedAt > interval).ToList();
     }
+
+    private static LightMoney GetSpentAmount(IEnumerable<Transaction> transactions)
+    {
+        return Math.Abs(transactions
+            .Where(t => t.AmountSettled != null)
+            .Sum(t => t.AmountSettled));
+    }
+
+    public LightMoney SpentTotal => GetSpentAmount(GetTransactions());
 
     public LightMoney GetRemainingBalance(bool total = false)
     {
@@ -78,7 +90,7 @@ public class WithdrawConfig
         if (Limit is > 0 && payments.Count >= Limit) return LightMoney.Zero;
 
         // Account for fees
-        var remaining = (limit ?? walletBalance) + payments.Sum(t => t.AmountSettled);
+        var remaining = (limit ?? walletBalance) + GetSpentAmount(payments);
         var remainingInSats = remaining.ToUnit(LightMoneyUnit.Satoshi);
         var maxFeeAmount = LightMoney.Satoshis(remainingInSats * (decimal)WalletService.MaxFeePercentDefault / 100);
         var remainingMinusFee = remaining - maxFeeAmount;

@@ -22,16 +22,19 @@ namespace BTCPayServer.Plugins.LNbank.Services.BoltCard;
 public class BoltCardService : EventHostedServiceBase
 {
     private readonly ConcurrentDictionary<int, SemaphoreSlim> _verificationSemaphores = new();
+    private readonly SemaphoreSlim _settingsSemaphore = new(1, 1);
     private readonly ISettingsRepository _settingsRepository;
     private readonly LNbankPluginDbContextFactory _dbContextFactory;
     private readonly IMemoryCache _memoryCache;
     private readonly WalletService _walletService;
+    private readonly WithdrawConfigRepository _withdrawConfigRepository;
 
     public BoltCardService(
         ISettingsRepository settingsRepository,
         EventAggregator eventAggregator,
         ILogger<BoltCardService> logger,
         LNbankPluginDbContextFactory dbContextFactory,
+        WithdrawConfigRepository withdrawConfigRepository,
         IMemoryCache memoryCache,
         WalletService walletService) : base(eventAggregator, logger)
     {
@@ -39,9 +42,8 @@ public class BoltCardService : EventHostedServiceBase
         _dbContextFactory = dbContextFactory;
         _memoryCache = memoryCache;
         _walletService = walletService;
+        _withdrawConfigRepository = withdrawConfigRepository;
     }
-
-    private readonly SemaphoreSlim _settingsSemaphore = new(1, 1);
 
     private async Task<BoltCardSettings> GetSettings()
     {
@@ -135,37 +137,23 @@ public class BoltCardService : EventHostedServiceBase
         return await tcs.Task;
     }
 
-    public async Task MarkForReactivation(string code)
+    public async Task<bool> MarkForReactivation(string boltCardId)
     {
-        await using var dbContext = _dbContextFactory.CreateContext();
-        var card = await dbContext.BoltCards.FindAsync( code);
-        if (card is null)
-        {
-            throw new Exception("Card not found");
-        }
-        card.Status = BoltCardStatus.PendingActivation;
-        card.CardIdentifier = null;
-        card.Counter = -1;
-        await dbContext.SaveChangesAsync();
+        return await _withdrawConfigRepository.MarkBoltCardForReactivation(boltCardId);
     }
 
     public async Task<string> CreateCard(string withdrawConfigId)
     {
-        await using var dbContext = _dbContextFactory.CreateContext();
-        var withdrawConfig = await dbContext.WithdrawConfigs.FindAsync(withdrawConfigId);
+        var withdrawConfig = await _withdrawConfigRepository.GetWithdrawConfig(new WithdrawConfigsQuery
+        {
+            WithdrawConfigId = withdrawConfigId
+        });
         if (withdrawConfig is null)
         {
             throw new Exception("Withdraw config not found");
         }
 
-        var boltCard = new Data.Models.BoltCard
-        {
-            Counter = -1,
-            WithdrawConfigId = withdrawConfigId,
-            Status = BoltCardStatus.PendingActivation
-        };
-        await dbContext.BoltCards.AddAsync(boltCard);
-        await dbContext.SaveChangesAsync();
+        var boltCard = await _withdrawConfigRepository.CreateBoltCardForWithdrawConfig(withdrawConfig);
         return boltCard.BoltCardId;
     }
 
@@ -191,7 +179,7 @@ public class BoltCardService : EventHostedServiceBase
         return (card, settings.Slip21Node(), groupNumber);
     }
 
-    public async Task<(Data.Models.BoltCard, string authorizationCode)> VerifyTap(string url, int group, CancellationToken cancellationToken)
+    public async Task<(Data.Models.BoltCard boltCard, string authorizationCode)> VerifyTap(string url, int group, CancellationToken cancellationToken)
     {
         var settings = await GetSettings();
         var slipNode = settings.Slip21Node();
@@ -254,15 +242,22 @@ public class BoltCardService : EventHostedServiceBase
         }
 
         var authorizationCode = Guid.NewGuid().ToString();
-        _memoryCache.Set(GetCacheKey(authorizationCode), matchedCard, TimeSpan.FromMinutes(5));
+        _memoryCache.Set(GetCacheKey(authorizationCode), matchedCard.WithdrawConfigId, TimeSpan.FromMinutes(5));
         return (matchedCard, authorizationCode);
     }
 
     public async Task<Transaction> HandleTapPayment(string authorizationCode, string paymentRequest)
     {
-        if (!_memoryCache.TryGetValue<Data.Models.BoltCard>(GetCacheKey(authorizationCode), out var card))
+        if (!_memoryCache.TryGetValue<string>(GetCacheKey(authorizationCode), out var withdrawConfigId))
             throw new Exception("Invalid authorization code");
-        return await _walletService.Send(card.WithdrawConfig, paymentRequest);
+
+        var withdrawConfig = await _withdrawConfigRepository.GetWithdrawConfig(new WithdrawConfigsQuery
+        {
+            WithdrawConfigId = withdrawConfigId,
+            IncludeTransactions = true
+        });
+
+        return await _walletService.Send(withdrawConfig, paymentRequest);
     }
 
     private static string GetCacheKey(string authorizationCode)

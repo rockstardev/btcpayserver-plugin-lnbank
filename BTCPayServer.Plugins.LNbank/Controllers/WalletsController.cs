@@ -35,7 +35,7 @@ public class WalletsController : Controller
             return NotFound();
         }
 
-        var data = _histogramService.GetHistogram(wallet, type);
+        var data = _histogramService.GetHistogram(wallet.Transactions, type);
         return data == null
             ? NotFound()
             : Json(data);

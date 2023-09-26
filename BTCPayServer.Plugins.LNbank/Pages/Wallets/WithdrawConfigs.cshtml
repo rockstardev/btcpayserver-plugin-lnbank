@@ -96,6 +96,7 @@
                         <th>Reuse</th>
                         <th>Max total</th>
                         <th>Max per use</th>
+                        <th>Stats</th>
                         <th>Bolt Card</th>
                         <th></th>
                     </tr>
@@ -110,10 +111,12 @@
                         }, HttpContext.Request.Scheme, HttpContext.Request.Host.ToString()) ?? string.Empty);
                         var lnurl = LNURL.LNURL.EncodeUri(lnurlEndpoint, "withdrawRequest", true).ToString().Replace("lightning:", "");
                         var lnurlUri = LNURL.LNURL.EncodeUri(lnurlEndpoint, "withdrawRequest", false).ToString();
+                        var rowId = $"WithdrawConfig-{withdrawConfig.WithdrawConfigId}";
                         var detailsId = $"LNbank-WithdrawConfig-Details-{withdrawConfig.WithdrawConfigId}";
                         var isActive = selectedId == withdrawConfig.WithdrawConfigId;
                         var boltCard = withdrawConfig.BoltCard;
-                        <tr>
+                        var transactions = withdrawConfig.GetTransactions();
+                        <tr id="@rowId">
                             <td>@withdrawConfig.Name</td>
                             <td>
                                 @if (withdrawConfig.ReuseType == WithdrawConfigReuseType.Unlimited)
@@ -141,6 +144,21 @@
                             </td>
                             <td>
                                 <span data-sensitive>@(withdrawConfig.MaxPerUse != null && withdrawConfig.MaxPerUse > 0 ? Helpers.Sats(withdrawConfig.MaxPerUse) : "No limit")</span>
+                            </td>
+                            <td>
+                                @if (transactions is { Count: > 0 })
+                                {
+                                    <span data-sensitive>
+                                        <a asp-page="/Wallets/Wallet" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-withdrawConfigId="@withdrawConfig.WithdrawConfigId">
+                                            @transactions.Count transaction@(transactions.Count == 1 ? "" : "s")
+                                        </a>
+                                        (@Helpers.Sats(withdrawConfig.SpentTotal) total)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span data-sensitive>No transactions</span>
+                                }
                             </td>
                             <td>
                                 @if (boltCard is null)

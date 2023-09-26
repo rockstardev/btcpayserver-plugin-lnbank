@@ -17,7 +17,7 @@ public enum HistogramType
 
 public class HistogramService
 {
-    public HistogramData GetHistogram(Wallet wallet, HistogramType type = HistogramType.Week)
+    public HistogramData GetHistogram(IEnumerable<Transaction> transactions, HistogramType type = HistogramType.Week)
     {
         var (days, pointCount) = type switch
         {
@@ -33,7 +33,7 @@ public class HistogramService
         var from = to - TimeSpan.FromDays(days);
         var ticks = (to - from).Ticks;
         var interval = TimeSpan.FromTicks(ticks / pointCount);
-        var all = wallet.Transactions
+        var all = transactions
             .Where(t => t.AmountSettled != null)
             .OrderBy(t => t.PaidAt);
         if (!all.Any()) return null;
@@ -49,10 +49,10 @@ public class HistogramService
 
         for (var i = 0; i < pointCount; i++)
         {
-            var transactions = range.Where(t =>
+            var txs = range.Where(t =>
                 t.CreatedAt.Ticks >= from.Ticks + interval.Ticks * i &&
                 t.CreatedAt.Ticks < from.Ticks + interval.Ticks * (i + 1));
-            balance += Wallet.GetBalance(transactions);
+            balance += Wallet.GetBalance(txs);
             series.Add(balance.ToUnit(LightMoneyUnit.Satoshi));
             labels.Add(i % labelEvery == 0
                 ? (from + interval * i).ToString("MMM dd", CultureInfo.InvariantCulture)

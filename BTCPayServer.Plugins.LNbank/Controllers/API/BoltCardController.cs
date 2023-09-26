@@ -36,7 +36,7 @@ public class BoltCardController : ControllerBase
         try
         {
             var result = await _boltCardService.VerifyTap(url, group, cancellationToken);
-            return Ok(GetWithdrawRequest(result.Item1.WithdrawConfig, result.authorizationCode));
+            return Ok(GetWithdrawRequest(result.boltCard.WithdrawConfig, result.authorizationCode));
         }
         catch (Exception exception)
         {
