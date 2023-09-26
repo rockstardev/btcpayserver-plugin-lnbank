@@ -223,13 +223,12 @@ public class BoltCardService : EventHostedServiceBase
         {
             await using var dbContext = _dbContextFactory.CreateContext();
 
-            matchedCard = await dbContext.BoltCards
-                .Where(card => card.Index == i)
+            matchedCard = await dbContext.BoltCards.AsNoTracking()
                 .Include(card => card.WithdrawConfig)
-                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+                .FirstOrDefaultAsync(card => card.Index == i, cancellationToken);
 
             if (matchedCard is null)
-                throw new Exception("No matching card found", null);
+                throw new Exception("No matching card exists", null);
 
             if (matchedCard.Status != BoltCardStatus.Active)
                 throw new Exception("Card is not active", null);
