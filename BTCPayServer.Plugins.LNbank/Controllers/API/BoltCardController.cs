@@ -59,7 +59,7 @@ public class BoltCardController : ControllerBase
                     return Ok(new LNUrlStatusResponse
                         { Status = "OK", Reason = $"The payment status is {transaction.Status}" });
                 case LightningPaymentStatus.Complete:
-                    return Ok(new LNUrlStatusResponse {Status = "OK"});
+                    return Ok(new LNUrlStatusResponse { Status = "OK" });
                 case LightningPaymentStatus.Failed:
                 default:
                     return BadRequest(GetError("Payment request could not be paid"));

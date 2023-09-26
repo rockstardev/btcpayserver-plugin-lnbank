@@ -254,15 +254,19 @@ public class BoltCardService : EventHostedServiceBase
         }
 
         var authorizationCode = Guid.NewGuid().ToString();
-        _memoryCache.CreateEntry("BoltCardAuthorizationCode_" + authorizationCode).SetValue(matchedCard).AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+        _memoryCache.Set(GetCacheKey(authorizationCode), matchedCard, TimeSpan.FromMinutes(5));
         return (matchedCard, authorizationCode);
     }
 
     public async Task<Transaction> HandleTapPayment(string authorizationCode, string paymentRequest)
     {
-        var card = _memoryCache.Get<Data.Models.BoltCard>("BoltCardAuthorizationCode_" + authorizationCode);
-        if (card is null)
+        if (!_memoryCache.TryGetValue<Data.Models.BoltCard>(GetCacheKey(authorizationCode), out var card))
             throw new Exception("Invalid authorization code");
         return await _walletService.Send(card.WithdrawConfig, paymentRequest);
+    }
+
+    private static string GetCacheKey(string authorizationCode)
+    {
+        return $"BoltCardAuthorizationCode_{authorizationCode}";
     }
 }
