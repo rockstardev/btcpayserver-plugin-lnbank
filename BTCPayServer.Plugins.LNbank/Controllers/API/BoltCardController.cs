@@ -9,6 +9,7 @@ using BTCPayServer.Plugins.LNbank.Services;
 using BTCPayServer.Plugins.LNbank.Services.BoltCard;
 using LNURL;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using NBitcoin;
 using Newtonsoft.Json;
 
@@ -26,7 +27,7 @@ public class BoltCardController : ControllerBase
     }
 
     [HttpGet("debug/{p}")]
-    public async Task<IActionResult> GetUIDAndCounterAndIndex(string p)
+    public async Task<IActionResult> GetUIDAndCounterAndIndex(string p, [FromServices] LNbankPluginDbContextFactory dbContextFactory)
     {
         var group = 0;
         var settings = await _boltCardService.GetSettings();
@@ -47,13 +48,26 @@ public class BoltCardController : ControllerBase
                 break;
         }
 
+        BoltCard boltCard = null;
+        if (boltCardMatch is not null)
+        {
+            await using var dbContext = dbContextFactory.CreateContext();
+
+            boltCard = await dbContext.BoltCards.AsNoTracking()
+                .Include(card => card.WithdrawConfig)
+                .FirstOrDefaultAsync(c => c.Index == i);
+        }
+
         return boltCardMatch is null
             ? NotFound("No Bolt Card matched")
             : Ok(new
             {
                 index = i,
                 boltCardMatch.Value.uid,
-                boltCardMatch.Value.counter
+                boltCardMatch.Value.counter,
+                withdrawConfigId = boltCard?.WithdrawConfigId,
+                status = boltCard?.Status,
+                savedCounter = boltCard?.Counter
             });
     }
 

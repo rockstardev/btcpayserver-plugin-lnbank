@@ -21,6 +21,8 @@ namespace BTCPayServer.Plugins.LNbank.Services.BoltCard;
 
 public class BoltCardService : EventHostedServiceBase
 {
+    private readonly ConcurrentDictionary<int, SemaphoreSlim> _verificationSemaphores = new();
+    private readonly ILogger<BoltCardService> _logger;
     private readonly ISettingsRepository _settingsRepository;
     private readonly LNbankPluginDbContextFactory _dbContextFactory;
     private readonly IMemoryCache _memoryCache;
@@ -34,6 +36,7 @@ public class BoltCardService : EventHostedServiceBase
         IMemoryCache memoryCache,
         WalletService walletService) : base(eventAggregator, logger)
     {
+        _logger = logger;
         _settingsRepository = settingsRepository;
         _dbContextFactory = dbContextFactory;
         _memoryCache = memoryCache;
@@ -190,8 +193,6 @@ public class BoltCardService : EventHostedServiceBase
         return (card, settings.Slip21Node(), groupNumber);
     }
 
-    private readonly ConcurrentDictionary<int, SemaphoreSlim> _verificationSemaphores = new();
-
     public async Task<(Data.Models.BoltCard, string authorizationCode)> VerifyTap(string url, int group, CancellationToken cancellationToken)
     {
         var settings = await GetSettings();
@@ -222,7 +223,10 @@ public class BoltCardService : EventHostedServiceBase
         {
             await using var dbContext = _dbContextFactory.CreateContext();
 
-            matchedCard = await dbContext.BoltCards.Where(card => card.Index == i).Include(card => card.WithdrawConfig).FirstOrDefaultAsync(cancellationToken: cancellationToken);
+            matchedCard = await dbContext.BoltCards
+                .Where(card => card.Index == i)
+                .Include(card => card.WithdrawConfig)
+                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
             if (matchedCard is null)
                 throw new Exception("No matching card found", null);
@@ -234,7 +238,7 @@ public class BoltCardService : EventHostedServiceBase
                 throw new Exception("Counter is too low", null);
 
             matchedCard.CardIdentifier ??= boltCardMatch.Value.uid;
-            if(matchedCard.CardIdentifier != boltCardMatch.Value.uid)
+            if (matchedCard.CardIdentifier != boltCardMatch.Value.uid)
                 throw new Exception("Card mismatch", null);
 
             var k2 =  slipNode.DeriveChild(i + "k2").Key.ToBytes().Take(16)
@@ -247,6 +251,11 @@ public class BoltCardService : EventHostedServiceBase
             }
             matchedCard.Counter = (int)boltCardMatch.Value.counter;
             await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception e)
+        {
+            _logger.LogInformation("Bolt Card tap verification failed: {Error} (URL: {Url}, Group: {Group})", e.Message, url, group);
+            throw;
         }
         finally
         {
