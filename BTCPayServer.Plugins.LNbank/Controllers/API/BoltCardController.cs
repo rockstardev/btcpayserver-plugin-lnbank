@@ -9,7 +9,7 @@ using BTCPayServer.Plugins.LNbank.Services;
 using BTCPayServer.Plugins.LNbank.Services.BoltCard;
 using LNURL;
 using Microsoft.AspNetCore.Mvc;
-using NBitcoin.Altcoins.Elements;
+using NBitcoin;
 using Newtonsoft.Json;
 
 namespace BTCPayServer.Plugins.LNbank.Controllers.API;
@@ -23,6 +23,38 @@ public class BoltCardController : ControllerBase
     public BoltCardController(BoltCardService boltCardService)
     {
         _boltCardService = boltCardService;
+    }
+
+    [HttpGet("debug/{p}")]
+    public async Task<IActionResult> GetUIDAndCounterAndIndex(string p)
+    {
+        var group = 0;
+        var settings = await _boltCardService.GetSettings();
+        var slipNode = settings.Slip21Node();
+        var lowerBound = group * settings.GroupSize;
+        var upperBound = lowerBound + settings.GroupSize - 1;
+        var url = Request.GetCurrentUrl() + $"?p={p}&c={Convert.ToHexString(RandomUtils.GetBytes(8))}";
+
+        (string uid, uint counter, byte[] rawUid, byte[] rawCtr, byte[] c)? boltCardMatch = null;
+        int i;
+        for (i = lowerBound; i <= upperBound; i++)
+        {
+            var k1 = slipNode.DeriveChild(i + "k1").Key.ToBytes().Take(16)
+                .ToArray();
+            boltCardMatch =
+                BoltCardHelper.ExtractBoltCardFromRequest(new Uri(url), k1, out var error);
+            if (error is null && boltCardMatch is not null)
+                break;
+        }
+
+        return boltCardMatch is null
+            ? NotFound("No Bolt Card matched")
+            : Ok(new
+            {
+                index = i,
+                boltCardMatch.Value.uid,
+                boltCardMatch.Value.counter
+            });
     }
 
     [HttpGet("pay/{group?}")]
@@ -71,15 +103,15 @@ public class BoltCardController : ControllerBase
         try
         {
             var card = await _boltCardService.IssueCard(code);
-
+            var index = card.card.Index!.Value;
             return Ok(new NewCardResponse
             {
                 CardName = card.card.WithdrawConfig.Name,
-                K0 = ToHexString(card, "k0"),
-                K1 = ToHexString(card, "k1"),
-                K2 = ToHexString(card, "k2"),
-                K3 = ToHexString(card, "k3"),
-                K4 = ToHexString(card, "k4"),
+                K0 = BoltCardService.ToHexString(card.masterSeed, index, "k0"),
+                K1 = BoltCardService.ToHexString(card.masterSeed, index, "k1"),
+                K2 = BoltCardService.ToHexString(card.masterSeed, index, "k2"),
+                K3 = BoltCardService.ToHexString(card.masterSeed, index, "k3"),
+                K4 = BoltCardService.ToHexString(card.masterSeed, index, "k4"),
                 LNURLW = Url.Action("BoltCardPay", "BoltCard", new
                 {
                     group =  card.group == 0? (int?) null: card.group
@@ -90,12 +122,6 @@ public class BoltCardController : ControllerBase
         {
             return BadRequest(e.Message);
         }
-    }
-
-    private static string ToHexString((BoltCard card, Slip21Node masterSeed, int group) card, string field)
-    {
-        return Convert.ToHexString(
-            card.masterSeed.DeriveChild(card.card.Index + field).Key.ToBytes().Take(16).ToArray());
     }
 
     public class NewCardResponse

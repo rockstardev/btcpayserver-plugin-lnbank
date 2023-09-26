@@ -42,7 +42,7 @@ public class BoltCardService : EventHostedServiceBase
 
     private readonly SemaphoreSlim _settingsSemaphore = new(1, 1);
 
-    private async Task<BoltCardSettings> GetSettings()
+    public async Task<BoltCardSettings> GetSettings()
     {
         await _settingsSemaphore.WaitAsync();
         var settings = await _settingsRepository.GetSettingAsync<BoltCardSettings>(nameof(BoltCardSettings));
@@ -98,17 +98,17 @@ public class BoltCardService : EventHostedServiceBase
         {
             version = 1,
             action = "wipe",
-            k0 = Convert.ToHexString(
-                slip21Node.DeriveChild(index + "k0").Key.ToBytes().Take(16).ToArray()),
-            k1 = Convert.ToHexString(
-                slip21Node.DeriveChild(index + "k1").Key.ToBytes().Take(16).ToArray()),
-            k2 = Convert.ToHexString(
-                slip21Node.DeriveChild(index + "k2").Key.ToBytes().Take(16).ToArray()),
-            k3 = Convert.ToHexString(
-                slip21Node.DeriveChild(index + "k3").Key.ToBytes().Take(16).ToArray()),
-            k4 = Convert.ToHexString(
-                slip21Node.DeriveChild(index + "k4").Key.ToBytes().Take(16).ToArray())
+            k0 = ToHexString(slip21Node, index, "k0"),
+            k1 = ToHexString(slip21Node, index, "k1"),
+            k2 = ToHexString(slip21Node, index, "k2"),
+            k3 = ToHexString(slip21Node, index, "k3"),
+            k4 = ToHexString(slip21Node, index, "k4"),
         }).ToString();
+    }
+
+    public static string ToHexString(Slip21Node slip21Node, int index, string field)
+    {
+        return Convert.ToHexString(slip21Node.DeriveChild(index + field).Key.ToBytes().Take(16).ToArray());
     }
 
     private record IncrementDerivationIndexEvt(TaskCompletionSource<int> tcs);
@@ -184,7 +184,7 @@ public class BoltCardService : EventHostedServiceBase
         card.Status = BoltCardStatus.Active;
 
         await dbContext.SaveChangesAsync();
-        var index = (int) card.Index;
+        var index = (int)card.Index;
         var groupSize = settings.GroupSize;
         var groupNumber = index / groupSize;
         return (card, settings.Slip21Node(), groupNumber);
