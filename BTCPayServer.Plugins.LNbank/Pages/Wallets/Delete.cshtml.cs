@@ -35,7 +35,7 @@ public class DeleteModel : BasePageModel
 
         try
         {
-            await WalletRepository.RemoveWallet(CurrentWallet);
+            await WalletRepository.RemoveWallet(CurrentWallet, User.IsInRole(Roles.ServerAdmin));
 
             TempData[WellKnownTempData.SuccessMessage] = "Wallet removed.";
             return RedirectToPage("./Index");

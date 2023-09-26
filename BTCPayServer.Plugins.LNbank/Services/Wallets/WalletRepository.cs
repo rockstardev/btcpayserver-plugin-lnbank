@@ -150,9 +150,9 @@ public class WalletRepository
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task RemoveWallet(Wallet wallet)
+    public async Task RemoveWallet(Wallet wallet, bool isAdmin)
     {
-        if (wallet.HasBalance)
+        if (wallet.HasBalance && !isAdmin)
             throw new Exception("This wallet still has a balance.");
 
         wallet.IsSoftDeleted = true;

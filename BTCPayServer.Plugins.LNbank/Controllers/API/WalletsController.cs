@@ -124,7 +124,7 @@ public class WalletsController : ControllerBase
 
         try
         {
-            await _walletRepository.RemoveWallet(wallet);
+            await _walletRepository.RemoveWallet(wallet, User.IsInRole(Roles.ServerAdmin));
             return Ok();
         }
         catch (Exception e)
