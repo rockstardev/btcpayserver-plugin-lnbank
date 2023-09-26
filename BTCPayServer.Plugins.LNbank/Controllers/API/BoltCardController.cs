@@ -29,53 +29,6 @@ public class BoltCardController : ControllerBase
         _logger = logger;
     }
 
-    /*
-    [HttpGet("debug/{p}")]
-    public async Task<IActionResult> GetUIDAndCounterAndIndex(string p, [FromServices] LNbankPluginDbContextFactory dbContextFactory)
-    {
-        var group = 0;
-        var settings = await _boltCardService.GetSettings();
-        var slipNode = settings.Slip21Node();
-        var lowerBound = group * settings.GroupSize;
-        var upperBound = lowerBound + settings.GroupSize - 1;
-        var url = Request.GetCurrentUrl() + $"?p={p}&c={Convert.ToHexString(RandomUtils.GetBytes(8))}";
-
-        (string uid, uint counter, byte[] rawUid, byte[] rawCtr, byte[] c)? boltCardMatch = null;
-        int i;
-        for (i = lowerBound; i <= upperBound; i++)
-        {
-            var k1 = slipNode.DeriveChild(i + "k1").Key.ToBytes().Take(16)
-                .ToArray();
-            boltCardMatch =
-                BoltCardHelper.ExtractBoltCardFromRequest(new Uri(url), k1, out var error);
-            if (error is null && boltCardMatch is not null)
-                break;
-        }
-
-        BoltCard boltCard = null;
-        if (boltCardMatch is not null)
-        {
-            await using var dbContext = dbContextFactory.CreateContext();
-
-            boltCard = await dbContext.BoltCards.AsNoTracking()
-                .Include(card => card.WithdrawConfig)
-                .FirstOrDefaultAsync(c => c.Index == i);
-        }
-
-        return boltCardMatch is null
-            ? NotFound("No Bolt Card matched")
-            : Ok(new
-            {
-                index = i,
-                boltCardMatch.Value.uid,
-                boltCardMatch.Value.counter,
-                withdrawConfigId = boltCard?.WithdrawConfigId,
-                status = boltCard?.Status,
-                savedCounter = boltCard?.Counter
-            });
-    }
-    */
-
     [HttpGet("pay/{group?}")]
     public async Task<IActionResult> BoltCardPay(int group = 0, CancellationToken cancellationToken = default)
     {
@@ -177,7 +130,7 @@ public class BoltCardController : ControllerBase
             MinWithdrawable = remaining > oneSat ? oneSat : LightMoney.Zero,
             MaxWithdrawable = remaining,
             CurrentBalance = remaining,
-            Callback = new Uri(Url.Action("BoltCardPayCallback", "BoltCard", null, "lnurlw"))
+            Callback = new Uri(Url.Action("BoltCardPayCallback", "BoltCard", null, Request.Scheme))
         };
         return request;
     }
