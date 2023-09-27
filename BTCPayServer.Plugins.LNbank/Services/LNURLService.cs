@@ -3,9 +3,11 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BTCPayServer.Lightning;
+using BTCPayServer.Plugins.LNbank.Controllers.API;
 using BTCPayServer.Plugins.LNbank.Exceptions;
 using LNURL;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Hosting;
 using MimeKit;
 using NBitcoin;
@@ -25,17 +27,20 @@ public class LNURLService
     internal static readonly int CommentLength = 2000;
 
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly LinkGenerator _linkGenerator;
     private readonly bool _isDevEnv;
     private readonly Network _network;
 
     public LNURLService(
         IHttpClientFactory httpClientFactory,
         BTCPayNetworkProvider networkProvider,
+        LinkGenerator linkGenerator,
         IHostEnvironment env)
     {
         _httpClientFactory = httpClientFactory;
-        _network = networkProvider.GetNetwork<BTCPayNetwork>(BTCPayService.CryptoCode).NBitcoinNetwork;
+        _linkGenerator = linkGenerator;
 
+        _network = networkProvider.GetNetwork<BTCPayNetwork>(BTCPayService.CryptoCode).NBitcoinNetwork;
         // This is to allow for local testing of LNURL payments
         _isDevEnv = networkProvider.NetworkType == ChainName.Regtest && env.IsDevelopment();
     }
@@ -62,7 +67,10 @@ public class LNURLService
 
     public string GetLNURLPayForWallet(HttpRequest req, string walletId, bool bech32)
     {
-        var endpoint = new Uri($"{req.Scheme}://{req.Host}{req.PathBase.ToUriComponent()}/api/v1/lnbank/lnurl/{walletId}/pay");
+        var endpoint = new Uri(_linkGenerator.GetUriByAction(
+            action: nameof(LnurlController.LnurlPay),
+            controller: "Lnurl",
+            values: new { walletId }, req.Scheme, req.Host, req.PathBase) ?? string.Empty);
         return LNURL.LNURL.EncodeUri(endpoint, "payRequest", bech32).ToString().Replace("lightning:", "");
     }
 

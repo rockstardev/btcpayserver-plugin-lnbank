@@ -9,6 +9,7 @@ using BTCPayServer.Plugins.LNbank.Services;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using LNURL;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Newtonsoft.Json;
 
 namespace BTCPayServer.Plugins.LNbank.Controllers.API;
@@ -20,9 +21,15 @@ public class LnurlController : ControllerBase
     private readonly WalletService _walletService;
     private readonly WalletRepository _walletRepository;
     private readonly WithdrawConfigRepository _withdrawConfigRepository;
+    private readonly LinkGenerator _linkGenerator;
 
-    public LnurlController(WalletService walletService, WalletRepository walletRepository, WithdrawConfigRepository withdrawConfigRepository)
+    public LnurlController(
+        LinkGenerator linkGenerator,
+        WalletService walletService,
+        WalletRepository walletRepository,
+        WithdrawConfigRepository withdrawConfigRepository)
     {
+        _linkGenerator = linkGenerator;
         _walletService = walletService;
         _walletRepository = walletRepository;
         _withdrawConfigRepository = withdrawConfigRepository;
@@ -154,8 +161,11 @@ public class LnurlController : ControllerBase
         MinSendable = LNURLService.MinSendable,
         MaxSendable = LNURLService.MaxSendable,
         CommentAllowed = LNURLService.CommentLength,
-        Callback = new Uri($"{Request.Scheme}://{Request.Host.ToUriComponent()}{Request.PathBase.ToUriComponent()}/api/v1/lnbank/lnurl/{walletId}/pay-callback"),
-        Metadata = metadata
+        Metadata = metadata,
+        Callback = new Uri(_linkGenerator.GetUriByAction(
+            action: nameof(LnurlPayCallback),
+            controller: "Lnurl",
+            values: new { walletId }, Request.Scheme, Request.Host, Request.PathBase) ?? string.Empty)
     };
 
     private LNURLWithdrawRequest GetWithdrawRequest(WithdrawConfig withdrawConfig)
