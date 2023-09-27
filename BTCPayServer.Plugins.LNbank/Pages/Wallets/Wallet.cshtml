@@ -11,7 +11,6 @@
 
 @{
     ViewData.SetActivePage(LNbankNavPages.Wallet, Model.CurrentWallet.Name, Model.CurrentWallet.WalletId);
-    var pendingTransactionIds = Model.Transactions.Where(t => t.IsPending || t.IsRevalidating).Select(t => t.TransactionId);
     var balance = Model.CurrentWallet.GetBalance();
 }
 
@@ -210,25 +209,21 @@ else if (Model.HistogramData != null)
             </table>
         </div>
     </div>
-
-    @if (pendingTransactionIds.Any())
-    {
-        <script>
-            (function () {
-                const pending = @Safe.Json(pendingTransactionIds);
-                window.LNbank.hubs.push({
-                    id: 'transaction',
-                    handlers: {
-                        'transaction-update': data => {
-                            if (pending.includes(data.transactionId)) {
-                                window.location.reload();
-                            }
+    <script>
+        (function () {
+            const walletId = @Safe.Json(Model.CurrentWallet.WalletId);
+            window.LNbank.hubs.push({
+                id: 'transaction',
+                handlers: {
+                    'transaction-update': data => {
+                        if (data.walletId === walletId) {
+                            window.location.reload();
                         }
                     }
-                })
-            })()
-        </script>
-    }
+                }
+            })
+        })()
+    </script>
 
     <a class="btn btn-secondary dropdown-toggle mt-4 ms-auto" href="#" role="button" id="ExportDropdownToggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         Export

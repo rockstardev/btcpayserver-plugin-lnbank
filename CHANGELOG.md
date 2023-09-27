@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix Lightning Address.
 - Bolt Card fixes.
 
+### Changed
+
+- Refresh wallet overview on incoming transaction.
+
 ## [1.7.0]
 
 ### Added
