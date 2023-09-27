@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using BTCPayServer.Client;
@@ -10,8 +11,6 @@ using BTCPayServer.Plugins.LNbank.Exceptions;
 using BTCPayServer.Plugins.LNbank.Hubs;
 using LNURL;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Transaction = BTCPayServer.Plugins.LNbank.Data.Models.Transaction;
@@ -24,19 +23,19 @@ public class WalletService
     public static readonly TimeSpan SendTimeout = TimeSpan.FromSeconds(21);
     public static readonly TimeSpan ExpiryDefault = TimeSpan.FromDays(1);
     private readonly BTCPayService _btcpayService;
-    private readonly LNbankPluginDbContextFactory _dbContextFactory;
     private readonly LNURLService _lnurlService;
     private readonly ILogger _logger;
     private readonly Network _network;
     private readonly IHubContext<TransactionHub> _transactionHub;
     private readonly WalletRepository _walletRepository;
+    private readonly WithdrawConfigService _withdrawConfigService;
 
     public WalletService(
+        BTCPayService btcpayService,
         ILogger<WalletService> logger,
         IHubContext<TransactionHub> transactionHub,
-        BTCPayService btcpayService,
         BTCPayNetworkProvider btcPayNetworkProvider,
-        LNbankPluginDbContextFactory dbContextFactory,
+        WithdrawConfigService withdrawConfigService,
         WalletRepository walletRepository,
         LNURLService lnurlService)
     {
@@ -44,9 +43,21 @@ public class WalletService
         _btcpayService = btcpayService;
         _transactionHub = transactionHub;
         _walletRepository = walletRepository;
-        _dbContextFactory = dbContextFactory;
         _lnurlService = lnurlService;
+        _withdrawConfigService = withdrawConfigService;
         _network = btcPayNetworkProvider.GetNetwork<BTCPayNetwork>(BTCPayService.CryptoCode).NBitcoinNetwork;
+    }
+
+    public bool HasBalance(Wallet wallet) => GetBalance(wallet) >= LightMoney.Satoshis(1);
+
+    public LightMoney GetBalance(Wallet wallet)
+    {
+        return _walletRepository.GetBalance(wallet);
+    }
+
+    public LightMoney GetBalance(IEnumerable<Transaction> transactions)
+    {
+        return _walletRepository.GetBalance(transactions);
     }
 
     public async Task<bool> IsPaid(string paymentHash)
@@ -64,9 +75,8 @@ public class WalletService
 
     public async Task<Transaction> TopUp(string walletId, LightMoney amount, string description, CancellationToken cancellationToken = default)
     {
-        await using var dbContext = _dbContextFactory.CreateContext();
         var timestamp = DateTimeOffset.UtcNow;
-        var entry = await dbContext.Transactions.AddAsync(
+        return await _walletRepository.AddTransaction(
             new Transaction
             {
                 WalletId = walletId,
@@ -84,10 +94,6 @@ public class WalletService
                 RoutingFee = null,
                 ExplicitStatus = Transaction.StatusSettled,
             }, cancellationToken);
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return entry.Entity;
     }
 
     public async Task<Transaction> Receive(Wallet wallet, CreateLightningInvoiceRequest req, string? memo = null,
@@ -98,9 +104,8 @@ public class WalletService
 
         var data = await _btcpayService.CreateLightningInvoice(req);
 
-        await using var dbContext = _dbContextFactory.CreateContext();
         var bolt11 = ParsePaymentRequest(data.BOLT11);
-        var entry = await dbContext.Transactions.AddAsync(
+        return await _walletRepository.AddTransaction(
             new Transaction
             {
                 WalletId = wallet.WalletId,
@@ -111,10 +116,6 @@ public class WalletService
                 PaymentHash = bolt11.PaymentHash?.ToString(),
                 Description = memo
             }, cancellationToken);
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return entry.Entity;
     }
 
     public async Task<Transaction> Send(Wallet wallet, string paymentRequest)
@@ -126,7 +127,7 @@ public class WalletService
     public async Task<Transaction> Send(WithdrawConfig withdrawConfig, string paymentRequest)
     {
         var bolt11 = ParsePaymentRequest(paymentRequest);
-        var remaining = withdrawConfig.GetRemainingBalance();
+        var remaining = _withdrawConfigService.GetRemainingBalance(withdrawConfig);
 
         if (bolt11.MinimumAmount > remaining)
             throw new PaymentRequestValidationException($"Payment request amount ({bolt11.MinimumAmount.ToUnit(LightMoneyUnit.Satoshi)} sats) was more than the remaining limit ({remaining.ToUnit(LightMoneyUnit.Satoshi)} sats)");
@@ -144,7 +145,7 @@ public class WalletService
         var amount = bolt11.MinimumAmount == LightMoney.Zero ? explicitAmount : bolt11.MinimumAmount;
         if (amount == null)
             throw new ArgumentException("Amount must be defined.", nameof(amount));
-        var balance = wallet.GetBalance();
+        var balance = GetBalance(wallet);
         if (balance < amount)
             throw new InsufficientBalanceException(
                 $"Insufficient balance: {Sats(balance)} — tried to send {Sats(amount)}.");
@@ -166,60 +167,32 @@ public class WalletService
             WithdrawConfigId = withdrawConfigId
         };
 
-        return await (isInternal && receivingTransaction != null
+        var transaction = await (isInternal && receivingTransaction != null
             ? SendInternal(sendingTransaction, receivingTransaction, cancellationToken)
-            : SendExternal(sendingTransaction, amount, wallet.GetBalance(), maxFeePercent, cancellationToken));
+            : SendExternal(sendingTransaction, amount, GetBalance(wallet), maxFeePercent, cancellationToken));
+
+        return transaction;
     }
 
     private async Task<Transaction> SendInternal(Transaction sendingTransaction, Transaction receivingTransaction,
         CancellationToken cancellationToken = default)
     {
-        var transaction = sendingTransaction;
-        await using var dbContext = _dbContextFactory.CreateContext();
-        var executionStrategy = dbContext.Database.CreateExecutionStrategy();
-        var isSettled = false;
-
-        await executionStrategy.ExecuteAsync(async () =>
-        {
-            await using IDbContextTransaction dbTransaction =
-                await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            try
-            {
-                var now = DateTimeOffset.UtcNow;
-
-                var receiveEntry = dbContext.Entry(receivingTransaction);
-                var sendingEntry = await dbContext.Transactions.AddAsync(sendingTransaction, cancellationToken);
-
-                sendingEntry.Entity.SetSettled(sendingTransaction.Amount, sendingTransaction.AmountSettled, null, now, null);
-                receiveEntry.Entity.SetSettled(sendingTransaction.Amount, sendingTransaction.Amount, null, now, null);
-                receiveEntry.State = EntityState.Modified;
-                await dbContext.SaveChangesAsync(cancellationToken);
-                await dbTransaction.CommitAsync(cancellationToken);
-
-                _logger.LogInformation("Settled transaction {TransactionId} internally. Paid by {SendingTransactionId}",
-                    receivingTransaction.TransactionId, sendingTransaction.TransactionId);
-
-                transaction = sendingEntry.Entity;
-                isSettled = transaction.IsSettled;
-            }
-            catch (Exception)
-            {
-                await dbTransaction.RollbackAsync(cancellationToken);
-
-                _logger.LogInformation("Settling transaction {TransactionId} internally failed",
-                    receivingTransaction.TransactionId);
-
-                throw;
-            }
-        });
-
+        var isSettled = await _walletRepository.SettleTransactionsAtomically(sendingTransaction, receivingTransaction, cancellationToken);
         if (isSettled)
         {
             await BroadcastTransactionUpdate(sendingTransaction, Transaction.StatusSettled);
             await BroadcastTransactionUpdate(receivingTransaction, Transaction.StatusSettled);
+
+            _logger.LogInformation("Settled transaction {TransactionId} internally. Paid by {SendingTransactionId}",
+                receivingTransaction.TransactionId, sendingTransaction.TransactionId);
+        }
+        else
+        {
+            _logger.LogInformation("Settling transaction {TransactionId} internally failed",
+                receivingTransaction.TransactionId);
         }
 
-        return transaction;
+        return sendingTransaction;
     }
 
     private async Task<Transaction> SendExternal(Transaction sendingTransaction, LightMoney amount,
@@ -244,16 +217,12 @@ public class WalletService
             }
         }
 
-        await using var dbContext = _dbContextFactory.CreateContext();
-
         // Create preliminary transaction entry - if something fails afterwards, the LightningInvoiceWatcher will handle cleanup
         sendingTransaction.Amount = amount;
         sendingTransaction.AmountSettled = new LightMoney(amountWithFee.MilliSatoshi * -1);
         sendingTransaction.RoutingFee = maxFeeAmount;
         sendingTransaction.ExplicitStatus = Transaction.StatusPending;
-        var sendingEntry = await dbContext.Transactions.AddAsync(sendingTransaction, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
+        var sendingEntry = await _walletRepository.AddTransaction(sendingTransaction, cancellationToken);
         try
         {
             // Pass explicit amount only for zero amount invoices, because the implementations might throw an exception otherwise
@@ -276,7 +245,7 @@ public class WalletService
             LightMoney settledAmount = new (result.TotalAmount * -1);
             var originalAmount = result.TotalAmount - result.FeeAmount;
 
-            await Settle(sendingEntry.Entity, originalAmount, settledAmount, result.FeeAmount, DateTimeOffset.UtcNow, result.Preimage);
+            await Settle(sendingEntry, originalAmount, settledAmount, result.FeeAmount, DateTimeOffset.UtcNow, result.Preimage);
         }
         catch (GreenfieldAPIException ex)
         {
@@ -285,8 +254,7 @@ public class WalletService
                 case "could-not-find-route":
                 case "generic-error":
                     // Remove preliminary transaction entry, payment could not be sent
-                    dbContext.Transactions.Remove(sendingTransaction);
-                    await dbContext.SaveChangesAsync(cancellationToken);
+                    await _walletRepository.RemoveTransaction(sendingTransaction, true);
                     break;
             }
 
@@ -298,10 +266,10 @@ public class WalletService
             // Timeout, potentially caused by hold invoices
             // Payment will be saved as pending, the LightningInvoiceWatcher will handle settling/cancelling
             _logger.LogInformation("Sending transaction {TransactionId} timed out. Saved as pending",
-                sendingEntry.Entity.TransactionId);
+                sendingEntry.TransactionId);
         }
 
-        return sendingEntry.Entity;
+        return sendingEntry;
     }
 
     public bool ValidateDescriptionHash(string paymentRequest, string metadata)

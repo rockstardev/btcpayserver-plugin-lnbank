@@ -6,6 +6,7 @@ using BTCPayServer.Lightning;
 using BTCPayServer.Plugins.LNbank.Data.Models;
 using BTCPayServer.Plugins.LNbank.Services;
 using BTCPayServer.Plugins.LNbank.Services.BoltCard;
+using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using LNURL;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -18,10 +19,15 @@ namespace BTCPayServer.Plugins.LNbank.Controllers.API;
 public class BoltCardController : ControllerBase
 {
     private readonly BoltCardService _boltCardService;
+    private readonly WithdrawConfigService _withdrawConfigService;
     private readonly ILogger<BoltCardController> _logger;
 
-    public BoltCardController(BoltCardService boltCardService, ILogger<BoltCardController> logger)
+    public BoltCardController(
+        BoltCardService boltCardService,
+        WithdrawConfigService withdrawConfigService,
+        ILogger<BoltCardController> logger)
     {
+        _withdrawConfigService = withdrawConfigService;
         _boltCardService = boltCardService;
         _logger = logger;
     }
@@ -118,7 +124,7 @@ public class BoltCardController : ControllerBase
 
     private LNURLWithdrawRequest GetWithdrawRequest(WithdrawConfig withdrawConfig, string authorizationCode)
     {
-        var remaining = withdrawConfig.GetRemainingBalance();
+        var remaining = _withdrawConfigService.GetRemainingBalance(withdrawConfig);
         var oneSat = LightMoney.Satoshis(1);
         var request = new LNURLWithdrawRequest
         {

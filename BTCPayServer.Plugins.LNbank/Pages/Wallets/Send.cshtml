@@ -1,13 +1,15 @@
 @page "/plugins/lnbank/wallets/{walletId}/send/{handler?}"
 @using BTCPayServer.Lightning
 @using BTCPayServer.Abstractions.Services
+@using BTCPayServer.Plugins.LNbank.Services.Wallets
 @inject Safe Safe
+@inject WalletService WalletService
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.SendModel
 
 @{
     ViewData.SetActivePage(LNbankNavPages.Wallet, "Send", Model.CurrentWallet.WalletId);
     var initialStep = Model.Bolt11 == null && Model.LnurlPay == null;
-    var balance = Model.CurrentWallet.GetBalance();
+    var balance = WalletService.GetBalance(Model.CurrentWallet);
 }
 
 @section LNbankFoot {

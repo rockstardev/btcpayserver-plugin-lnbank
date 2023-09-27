@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Threading.Tasks;
 using BTCPayServer.Lightning;
 using BTCPayServer.Plugins.LNbank.Data.Models;
 
@@ -17,6 +16,13 @@ public enum HistogramType
 
 public class HistogramService
 {
+    private readonly WalletService _walletService;
+
+    public HistogramService(WalletService walletService)
+    {
+        _walletService = walletService;
+    }
+
     public HistogramData GetHistogram(IEnumerable<Transaction> transactions, HistogramType type = HistogramType.Week)
     {
         var (days, pointCount) = type switch
@@ -43,7 +49,7 @@ public class HistogramService
             .ToList();
         var range = beforeAndRange.FirstOrDefault(g => g.Key)?.ToList() ?? new List<Transaction>();
         var before = beforeAndRange.FirstOrDefault(g => g.Key == false)?.ToList();
-        var balance = before == null ? LightMoney.Zero : Wallet.GetBalance(before);
+        var balance = before == null ? LightMoney.Zero : _walletService.GetBalance(before);
         var series = new List<decimal>(pointCount);
         var labels = new List<string>(pointCount);
 
@@ -52,7 +58,7 @@ public class HistogramService
             var txs = range.Where(t =>
                 t.CreatedAt.Ticks >= from.Ticks + interval.Ticks * i &&
                 t.CreatedAt.Ticks < from.Ticks + interval.Ticks * (i + 1));
-            balance += Wallet.GetBalance(txs);
+            balance += _walletService.GetBalance(txs);
             series.Add(balance.ToUnit(LightMoneyUnit.Satoshi));
             labels.Add(i % labelEvery == 0
                 ? (from + interval * i).ToString("MMM dd", CultureInfo.InvariantCulture)

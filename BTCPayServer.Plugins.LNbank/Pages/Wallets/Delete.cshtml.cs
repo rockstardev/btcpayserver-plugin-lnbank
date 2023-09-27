@@ -33,17 +33,14 @@ public class DeleteModel : BasePageModel
         if (CurrentWallet == null)
             return NotFound();
 
-        try
+        if (WalletService.HasBalance(CurrentWallet) && !User.IsInRole(Roles.ServerAdmin))
         {
-            await WalletRepository.RemoveWallet(CurrentWallet, User.IsInRole(Roles.ServerAdmin));
-
-            TempData[WellKnownTempData.SuccessMessage] = "Wallet removed.";
-            return RedirectToPage("./Index");
-        }
-        catch (Exception e)
-        {
-            TempData[WellKnownTempData.ErrorMessage] = e.Message;
+            TempData[WellKnownTempData.ErrorMessage] = "This wallet still has a balance.";
             return Page();
         }
+
+        await WalletRepository.RemoveWallet(CurrentWallet);
+        TempData[WellKnownTempData.SuccessMessage] = "Wallet removed.";
+        return RedirectToPage("./Index");
     }
 }

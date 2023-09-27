@@ -20,6 +20,7 @@ public class LnurlController : ControllerBase
 {
     private readonly WalletService _walletService;
     private readonly WalletRepository _walletRepository;
+    private readonly WithdrawConfigService _withdrawConfigService;
     private readonly WithdrawConfigRepository _withdrawConfigRepository;
     private readonly LinkGenerator _linkGenerator;
 
@@ -27,11 +28,13 @@ public class LnurlController : ControllerBase
         LinkGenerator linkGenerator,
         WalletService walletService,
         WalletRepository walletRepository,
+        WithdrawConfigService withdrawConfigService,
         WithdrawConfigRepository withdrawConfigRepository)
     {
         _linkGenerator = linkGenerator;
         _walletService = walletService;
         _walletRepository = walletRepository;
+        _withdrawConfigService = withdrawConfigService;
         _withdrawConfigRepository = withdrawConfigRepository;
     }
 
@@ -170,7 +173,7 @@ public class LnurlController : ControllerBase
 
     private LNURLWithdrawRequest GetWithdrawRequest(WithdrawConfig withdrawConfig)
     {
-        var remaining = withdrawConfig.GetRemainingBalance();
+        var remaining = _withdrawConfigService.GetRemainingBalance(withdrawConfig);
         var oneSat = LightMoney.Satoshis(1);
         var thisUri = new Uri(Request.GetCurrentUrl());
         var request = new LNURLWithdrawRequest

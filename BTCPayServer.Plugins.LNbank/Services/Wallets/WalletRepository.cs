@@ -1,21 +1,28 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using BTCPayServer.Lightning;
 using BTCPayServer.Plugins.LNbank.Data;
 using BTCPayServer.Plugins.LNbank.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace BTCPayServer.Plugins.LNbank.Services.Wallets;
 
 public class WalletRepository
 {
     private readonly LNbankPluginDbContextFactory _dbContextFactory;
+    private readonly IMemoryCache _memoryCache;
 
-    public WalletRepository(LNbankPluginDbContextFactory dbContextFactory)
+    public WalletRepository(
+        LNbankPluginDbContextFactory dbContextFactory,
+        IMemoryCache memoryCache)
     {
         _dbContextFactory = dbContextFactory;
+        _memoryCache = memoryCache;
     }
 
     public async Task<IEnumerable<Wallet>> GetWallets(WalletsQuery query)
@@ -121,9 +128,8 @@ public class WalletRepository
 
     public async Task<AccessKey> AddOrUpdateAccessKey(string walletId, string userId, AccessLevel level)
     {
-        await using LNbankPluginDbContext dbContext = _dbContextFactory.CreateContext();
-        AccessKey accessKey =
-            await dbContext.AccessKeys.FirstOrDefaultAsync(a => a.WalletId == walletId && a.UserId == userId);
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var accessKey = await dbContext.AccessKeys.FirstOrDefaultAsync(a => a.WalletId == walletId && a.UserId == userId);
 
         if (accessKey == null)
         {
@@ -143,18 +149,15 @@ public class WalletRepository
 
     public async Task DeleteAccessKey(string walletId, string key)
     {
-        await using LNbankPluginDbContext dbContext = _dbContextFactory.CreateContext();
-        AccessKey accessKey = await dbContext.AccessKeys.FirstAsync(a => a.WalletId == walletId && a.Key == key);
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var accessKey = await dbContext.AccessKeys.FirstAsync(a => a.WalletId == walletId && a.Key == key);
 
         dbContext.AccessKeys.Remove(accessKey);
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task RemoveWallet(Wallet wallet, bool isAdmin)
+    public async Task RemoveWallet(Wallet wallet)
     {
-        if (wallet.HasBalance && !isAdmin)
-            throw new Exception("This wallet still has a balance.");
-
         wallet.IsSoftDeleted = true;
         await AddOrUpdateWallet(wallet);
     }
@@ -174,22 +177,20 @@ public class WalletRepository
 
     public async Task<Transaction> GetTransaction(TransactionQuery query)
     {
-        await using LNbankPluginDbContext dbContext = _dbContextFactory.CreateContext();
-        IQueryable<Transaction> queryable = dbContext.Transactions.AsQueryable();
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var queryable = dbContext.Transactions.AsQueryable();
 
         if (query.WalletId != null)
         {
-            WalletsQuery walletQuery = new WalletsQuery
+            var walletQuery = new WalletsQuery
             {
                 WalletId = new[] { query.WalletId },
                 IncludeTransactions = true
             };
-
             if (query.UserId != null)
                 walletQuery.UserId = new[] { query.UserId };
 
-            Wallet wallet = await GetWallet(walletQuery);
-
+            var wallet = await GetWallet(walletQuery);
             if (wallet == null)
                 return null;
 
@@ -213,13 +214,16 @@ public class WalletRepository
         return queryable.FirstOrDefault();
     }
 
-    public async Task LoadTransactionWithdrawConfig(Transaction transaction)
+    public async Task<Transaction> AddTransaction(Transaction transaction, CancellationToken cancellationToken = default)
     {
-        if (!string.IsNullOrEmpty(transaction.WithdrawConfigId))
-        {
-            await using var dbContext = _dbContextFactory.CreateContext();
-            await dbContext.Entry(transaction).Reference(t => t.WithdrawConfig).LoadAsync();
-        }
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var entry = await dbContext.Transactions.AddAsync(transaction, cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        InvalidateBalanceCache(transaction.WalletId);
+
+        return entry.Entity;
     }
 
     public async Task<Transaction> UpdateTransaction(Transaction transaction)
@@ -230,19 +234,65 @@ public class WalletRepository
 
         await dbContext.SaveChangesAsync();
 
+        InvalidateBalanceCache(transaction.WalletId);
+
         return entry.Entity;
     }
 
-    public async Task RemoveTransaction(Transaction transaction)
+    public async Task<bool> SettleTransactionsAtomically(Transaction sendingTransaction, Transaction receivingTransaction, CancellationToken cancellationToken = default)
     {
-        transaction.IsSoftDeleted = true;
-        await UpdateTransaction(transaction);
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var executionStrategy = dbContext.Database.CreateExecutionStrategy();
+        var result = false;
+        await executionStrategy.ExecuteAsync(async () =>
+        {
+            await using var dbTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var now = DateTimeOffset.UtcNow;
+                var receiveEntry = dbContext.Entry(receivingTransaction);
+                var sendingEntry = await dbContext.Transactions.AddAsync(sendingTransaction, cancellationToken);
+
+                sendingEntry.Entity.SetSettled(sendingTransaction.Amount, sendingTransaction.AmountSettled, null, now, null);
+                receiveEntry.Entity.SetSettled(sendingTransaction.Amount, sendingTransaction.Amount, null, now, null);
+                receiveEntry.State = EntityState.Modified;
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await dbTransaction.CommitAsync(cancellationToken);
+
+                InvalidateBalanceCache(sendingTransaction.WalletId);
+                InvalidateBalanceCache(receivingTransaction.WalletId);
+
+                result = true;
+            }
+            catch (Exception)
+            {
+                await dbTransaction.RollbackAsync(cancellationToken);
+            }
+        });
+        return result;
+    }
+
+    public async Task RemoveTransaction(Transaction transaction, bool forceDelete = false)
+    {
+        if (forceDelete)
+        {
+            await using var dbContext = _dbContextFactory.CreateContext();
+            dbContext.Transactions.Remove(transaction);
+            await dbContext.SaveChangesAsync();
+
+            InvalidateBalanceCache(transaction.WalletId);
+        }
+        else
+        {
+            transaction.IsSoftDeleted = true;
+            await UpdateTransaction(transaction);
+        }
     }
 
     public async Task<IEnumerable<Transaction>> GetTransactions(TransactionsQuery query)
     {
-        await using LNbankPluginDbContext dbContext = _dbContextFactory.CreateContext();
-        IQueryable<Transaction> queryable = dbContext.Transactions.AsQueryable();
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var queryable = dbContext.Transactions.AsQueryable();
 
         if (query.UserId != null)
             query.IncludeWallet = true;
@@ -290,5 +340,32 @@ public class WalletRepository
         return await dbContext.Transactions.AsQueryable()
             .Where(t => t.AmountSettled != null)
             .SumAsync(t => t.AmountSettled);
+    }
+
+    public LightMoney GetBalance(Wallet wallet)
+    {
+        if (!_memoryCache.TryGetValue<LightMoney>(GetBalanceCacheKey(wallet.WalletId), out var balance))
+        {
+            balance = GetBalance(wallet.Transactions);
+            _memoryCache.Set(GetBalanceCacheKey(wallet.WalletId), balance, TimeSpan.FromMinutes(5));
+        }
+        return balance;
+    }
+
+    public LightMoney GetBalance(IEnumerable<Transaction> transactions)
+    {
+        return transactions
+            .Where(t => t.AmountSettled != null)
+            .Sum(t => t.AmountSettled - (t.HasRoutingFee ? t.RoutingFee : LightMoney.Zero));
+    }
+
+    private void InvalidateBalanceCache(string walletId)
+    {
+        _memoryCache.Remove(GetBalanceCacheKey(walletId));
+    }
+
+    private static string GetBalanceCacheKey(string walletId)
+    {
+        return $"LNbankWalletBalance_{walletId}";
     }
 }

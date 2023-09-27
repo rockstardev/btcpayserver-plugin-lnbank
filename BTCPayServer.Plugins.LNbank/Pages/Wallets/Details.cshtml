@@ -1,5 +1,7 @@
 @page "/plugins/lnbank/wallets/{walletId}/details"
 @using BTCPayServer.Plugins.LNbank.Data.Models
+@using BTCPayServer.Plugins.LNbank.Services.Wallets
+@inject WalletService WalletService
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.DetailsModel
 @{
     ViewData.SetActivePage(LNbankNavPages.WalletSettings, Model.CurrentWallet.Name, Model.CurrentWallet.WalletId);
@@ -21,8 +23,8 @@
         Balance
     </dt>
     <dd class="col-sm-9 col-xl-10" id="LNbank-Balance">
-        <span data-sensitive>@Helpers.Sats(Model.CurrentWallet.GetBalance())</span> /
-        <span data-sensitive>@Helpers.Millisats(Model.CurrentWallet.GetBalance())</span>
+        <span data-sensitive>@Helpers.Sats(WalletService.GetBalance(Model.CurrentWallet))</span> /
+        <span data-sensitive>@Helpers.Millisats(WalletService.GetBalance(Model.CurrentWallet))</span>
     </dd>
     <dt class="col-sm-3 col-xl-2">
         @Html.DisplayNameFor(model => model.CurrentWallet.WalletId)

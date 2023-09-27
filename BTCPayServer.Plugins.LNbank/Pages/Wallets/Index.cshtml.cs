@@ -54,7 +54,7 @@ public class IndexModel : BasePageModel
         }
 
         TotalBalance = Wallets
-            .Select(w => w.GetBalance())
+            .Select(w => WalletService.GetBalance(w))
             .Aggregate((res, current) => res + current);
 
         // check LNbank reserves

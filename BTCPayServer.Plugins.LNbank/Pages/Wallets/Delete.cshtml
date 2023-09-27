@@ -1,5 +1,7 @@
 @page "/plugins/lnbank/wallets/{walletId}/delete"
 @using BTCPayServer.Plugins.LNbank.Authentication
+@using BTCPayServer.Plugins.LNbank.Services.Wallets
+@inject WalletService WalletService
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.DeleteModel
 
 @{
@@ -10,7 +12,7 @@
 <partial name="_Nav" model="Model.CurrentWallet"/>
 <partial name="_StatusMessage"/>
 
-@if (Model.CurrentWallet.HasBalance)
+@if (WalletService.HasBalance(Model.CurrentWallet))
 {
     <p>This wallet still has a balance. Please <a asp-page="./Send" asp-route-walletId="@Model.CurrentWallet.WalletId">transfer the funds</a> before deleting it.</p>
 

@@ -20,6 +20,7 @@ public static class AppExtensions
         services.AddSingleton<WalletService>();
         services.AddSingleton<WalletRepository>();
         services.AddSingleton<HistogramService>();
+        services.AddSingleton<WithdrawConfigService>();
         services.AddSingleton<WithdrawConfigRepository>();
         services.AddSingleton<ISwaggerProvider, LNbankSwaggerProvider>();
         services.AddSingleton<AuthorizationRequirementHandler>();

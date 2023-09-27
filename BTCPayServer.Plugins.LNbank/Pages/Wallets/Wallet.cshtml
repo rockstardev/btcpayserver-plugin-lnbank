@@ -2,16 +2,15 @@
 @using BTCPayServer.Lightning
 @using BTCPayServer.Plugins.LNbank.Authentication
 @using BTCPayServer.Plugins.LNbank.Data.Models
-@using Microsoft.AspNetCore.Mvc.TagHelpers
-@using BTCPayServer.Abstractions.TagHelpers
 @using BTCPayServer.Abstractions.Models
 @using BTCPayServer.Plugins.LNbank.Services.Wallets
 @inject BTCPayServer.Abstractions.Services.Safe Safe
+@inject WalletService WalletService
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.WalletModel
 
 @{
     ViewData.SetActivePage(LNbankNavPages.Wallet, Model.CurrentWallet.Name, Model.CurrentWallet.WalletId);
-    var balance = Model.CurrentWallet.GetBalance();
+    var balance = WalletService.GetBalance(Model.CurrentWallet);
 }
 
 @section LNbankHead {

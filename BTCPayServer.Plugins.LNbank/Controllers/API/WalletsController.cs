@@ -122,15 +122,13 @@ public class WalletsController : ControllerBase
         if (wallet == null)
             return this.CreateAPIError(404, "wallet-not-found", "The wallet was not found");
 
-        try
+        if (_walletService.HasBalance(wallet) && !User.IsInRole(Roles.ServerAdmin))
         {
-            await _walletRepository.RemoveWallet(wallet, User.IsInRole(Roles.ServerAdmin));
-            return Ok();
+            return this.CreateAPIError("wallet-not-empty", "This wallet still has a balance.");
         }
-        catch (Exception e)
-        {
-            return this.CreateAPIError("wallet-not-empty", e.Message);
-        }
+
+        await _walletRepository.RemoveWallet(wallet);
+        return Ok();
     }
 
     [HttpPost("{walletId}/receive")]
@@ -274,7 +272,7 @@ public class WalletsController : ControllerBase
             Id = model.WalletId,
             Name = model.Name,
             CreatedAt = model.CreatedAt,
-            Balance = model.GetBalance(),
+            Balance = _walletService.GetBalance(model),
             AccessKey = model.AccessKeys.FirstOrDefault(ak => ak.UserId == GetUserId())?.Key,
             LnurlPayBech32 = _lnurlService.GetLNURLPayForWallet(Request, model.WalletId, true),
             LnurlPayUri = _lnurlService.GetLNURLPayForWallet(Request, model.WalletId, false)

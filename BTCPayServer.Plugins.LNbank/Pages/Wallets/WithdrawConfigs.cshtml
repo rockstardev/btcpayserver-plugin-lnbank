@@ -3,8 +3,10 @@
 @using BTCPayServer.Abstractions.Models
 @using BTCPayServer.Plugins.LNbank.Extensions
 @using BTCPayServer.Plugins.LNbank.Services.BoltCard
+@using BTCPayServer.Plugins.LNbank.Services.Wallets
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.WithdrawConfigsModel
 @inject BoltCardService BoltCardService
+@inject WithdrawConfigService WithdrawConfigService
 
 @{
     ViewData.SetActivePage(LNbankNavPages.WalletWithdrawConfigs, $"Withdraw configurations for \"{Model.CurrentWallet.Name}\"", Model.CurrentWallet.WalletId);
@@ -126,7 +128,7 @@
                                 else
                                 {
                                     <span>@withdrawConfig.Limit @typeof(WithdrawConfigReuseType).DisplayName(withdrawConfig.ReuseType.ToString()).ToLowerInvariant()</span>
-                                    <span>(@withdrawConfig.GetRemainingUsages() remaining@(withdrawConfig.ReuseType == WithdrawConfigReuseType.Total ? "" : " in interval"))</span>
+                                    <span>(@WithdrawConfigService.GetRemainingUsages(withdrawConfig) remaining@(withdrawConfig.ReuseType == WithdrawConfigReuseType.Total ? "" : " in interval"))</span>
                                 }
                             </td>
                             <td>
@@ -134,7 +136,7 @@
                                     @if (withdrawConfig.MaxTotal != null && withdrawConfig.MaxTotal > 0)
                                     {
                                         <span>@Helpers.Sats(withdrawConfig.MaxTotal)</span>
-                                        <span>(@Helpers.Sats(withdrawConfig.GetRemainingBalance(true)) remaining)</span>
+                                        <span>(@Helpers.Sats(WithdrawConfigService.GetRemainingBalance(withdrawConfig, true)) remaining)</span>
                                     }
                                     else
                                     {
@@ -152,7 +154,7 @@
                                         <a asp-page="/Wallets/Wallet" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-withdrawConfigId="@withdrawConfig.WithdrawConfigId">
                                             @transactions.Count transaction@(transactions.Count == 1 ? "" : "s")
                                         </a>
-                                        (@Helpers.Sats(withdrawConfig.SpentTotal) total)
+                                        (@Helpers.Sats(WithdrawConfigService.GetSpentTotal(withdrawConfig)) total)
                                     </span>
                                 }
                                 else

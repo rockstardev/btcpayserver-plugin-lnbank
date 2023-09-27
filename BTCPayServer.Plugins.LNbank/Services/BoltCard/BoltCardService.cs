@@ -262,6 +262,6 @@ public class BoltCardService : EventHostedServiceBase
 
     private static string GetCacheKey(string authorizationCode)
     {
-        return $"BoltCardAuthorizationCode_{authorizationCode}";
+        return $"LNbankBoltCardAuthorizationCode_{authorizationCode}";
     }
 }

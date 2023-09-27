@@ -54,64 +54,6 @@ public class WithdrawConfig
             t.WithdrawConfigId == WithdrawConfigId && t.AmountSettled != null).ToList();
     }
 
-    private ICollection<Transaction> GetPaymentsInInterval()
-    {
-        if (ReuseType is WithdrawConfigReuseType.Unlimited or WithdrawConfigReuseType.Total)
-            return GetTransactions().ToList();
-
-        var days = ReuseType switch
-        {
-            WithdrawConfigReuseType.PerDay => 1,
-            WithdrawConfigReuseType.PerWeek => 7,
-            WithdrawConfigReuseType.PerMonth => 30,
-            _ => throw new ArgumentOutOfRangeException()
-        };
-        var interval = DateTime.UtcNow.AddDays(days * -1);
-        return GetTransactions().Where(t => t.CreatedAt > interval).ToList();
-    }
-
-    private static LightMoney GetSpentAmount(IEnumerable<Transaction> transactions)
-    {
-        return Math.Abs(transactions
-            .Where(t => t.AmountSettled != null)
-            .Sum(t => t.AmountSettled - (t.HasRoutingFee ? t.RoutingFee : LightMoney.Zero)));
-    }
-
-    public LightMoney SpentTotal => GetSpentAmount(GetTransactions());
-
-    public LightMoney GetRemainingBalance(bool total = false)
-    {
-        var walletBalance = Wallet.GetBalance();
-        var hasTotalLimit = MaxTotal != null && MaxTotal > LightMoney.Zero;
-        var hasPerUseLimit = MaxPerUse != null && MaxPerUse > LightMoney.Zero;
-        var upperLimit = total ? MaxTotal : MaxPerUse;
-        var limit = hasTotalLimit || hasPerUseLimit ? upperLimit : null;
-        var payments = GetPaymentsInInterval();
-        if (Limit is > 0 && payments.Count >= Limit) return LightMoney.Zero;
-
-        // Account for fees
-        var remaining = (limit ?? walletBalance) + GetSpentAmount(payments);
-        var remainingInSats = remaining.ToUnit(LightMoneyUnit.Satoshi);
-        var maxFeeAmount = LightMoney.Satoshis(remainingInSats * (decimal)WalletService.MaxFeePercentDefault / 100);
-        var remainingMinusFee = remaining - maxFeeAmount;
-        // allow sweeping transaction if the amount is below threshold and empties the wallet
-        if (remainingInSats == walletBalance.ToUnit(LightMoneyUnit.Satoshi) && remainingInSats < 10000)
-        {
-            remainingMinusFee = walletBalance;
-        }
-
-        return Math.Min(remainingMinusFee, walletBalance);
-    }
-
-    public uint GetRemainingUsages() {
-        if (ReuseType == WithdrawConfigReuseType.Unlimited)
-            return uint.MaxValue;
-
-        var limit = Limit!.Value;
-        var payments = GetPaymentsInInterval();
-        return payments.Count >= limit ? 0 : limit - (uint)payments.Count;
-    }
-
     public bool IsSoftDeleted { get; set; }
     public BoltCard BoltCard { get; set; }
 

@@ -26,18 +26,6 @@ public class Wallet
 
     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
-    public LightMoney GetBalance() => GetBalance(Transactions);
-
-    public static LightMoney GetBalance(IEnumerable<Transaction> transactions)
-    {
-        return transactions
-            .Where(t => t.AmountSettled != null)
-            .Sum(t => t.AmountSettled - (t.HasRoutingFee ? t.RoutingFee : LightMoney.Zero));
-    }
-
-    [NotMapped]
-    public bool HasBalance => GetBalance() >= LightMoney.Satoshis(1);
-
     public ICollection<AccessKey> AccessKeys { get; set; } = new List<AccessKey>();
 
     [NotMapped]
