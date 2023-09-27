@@ -74,7 +74,7 @@ public class WithdrawConfig
     {
         return Math.Abs(transactions
             .Where(t => t.AmountSettled != null)
-            .Sum(t => t.AmountSettled));
+            .Sum(t => t.AmountSettled - (t.HasRoutingFee ? t.RoutingFee : LightMoney.Zero)));
     }
 
     public LightMoney SpentTotal => GetSpentAmount(GetTransactions());

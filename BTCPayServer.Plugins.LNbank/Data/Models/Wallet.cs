@@ -32,7 +32,7 @@ public class Wallet
     {
         return transactions
             .Where(t => t.AmountSettled != null)
-            .Sum(t => t.AmountSettled);
+            .Sum(t => t.AmountSettled - (t.HasRoutingFee ? t.RoutingFee : LightMoney.Zero));
     }
 
     [NotMapped]
