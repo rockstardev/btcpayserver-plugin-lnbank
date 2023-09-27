@@ -12,6 +12,7 @@
 @{
     ViewData.SetActivePage(LNbankNavPages.Wallet, Model.CurrentWallet.Name, Model.CurrentWallet.WalletId);
     var pendingTransactionIds = Model.Transactions.Where(t => t.IsPending || t.IsRevalidating).Select(t => t.TransactionId);
+    var balance = Model.CurrentWallet.GetBalance();
 }
 
 @section LNbankHead {
@@ -46,10 +47,10 @@ else if (Model.HistogramData != null)
             <h6>Wallet Balance</h6>
         </div>
         <header class="mb-3">
-            @if (Model.CurrentWallet.Balance != null)
+            @if (balance != null)
             {
                 <div class="balance d-flex align-items-baseline gap-1">
-                    <h3 class="d-inline-block me-1" data-balance="@Model.CurrentWallet.Balance" data-sensitive>@Helpers.Sats(Model.CurrentWallet.Balance, false)</h3>
+                    <h3 class="d-inline-block me-1" data-balance="@balance" data-sensitive>@Helpers.Sats(balance, false)</h3>
                     <span class="text-secondary fw-semibold currency">sats</span>
                 </div>
             }

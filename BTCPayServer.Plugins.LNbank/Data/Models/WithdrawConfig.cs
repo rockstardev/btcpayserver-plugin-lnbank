@@ -81,7 +81,7 @@ public class WithdrawConfig
 
     public LightMoney GetRemainingBalance(bool total = false)
     {
-        var walletBalance = Wallet.Balance;
+        var walletBalance = Wallet.GetBalance();
         var hasTotalLimit = MaxTotal != null && MaxTotal > LightMoney.Zero;
         var hasPerUseLimit = MaxPerUse != null && MaxPerUse > LightMoney.Zero;
         var upperLimit = total ? MaxTotal : MaxPerUse;

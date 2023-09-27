@@ -144,9 +144,10 @@ public class WalletService
         var amount = bolt11.MinimumAmount == LightMoney.Zero ? explicitAmount : bolt11.MinimumAmount;
         if (amount == null)
             throw new ArgumentException("Amount must be defined.", nameof(amount));
-        if (wallet.Balance < amount)
+        var balance = wallet.GetBalance();
+        if (balance < amount)
             throw new InsufficientBalanceException(
-                $"Insufficient balance: {Sats(wallet.Balance)} — tried to send {Sats(amount)}.");
+                $"Insufficient balance: {Sats(balance)} — tried to send {Sats(amount)}.");
 
         // check if the invoice exists already
         var paymentRequest = bolt11.ToString();
@@ -167,7 +168,7 @@ public class WalletService
 
         return await (isInternal && receivingTransaction != null
             ? SendInternal(sendingTransaction, receivingTransaction, cancellationToken)
-            : SendExternal(sendingTransaction, amount, wallet.Balance, maxFeePercent, cancellationToken));
+            : SendExternal(sendingTransaction, amount, wallet.GetBalance(), maxFeePercent, cancellationToken));
     }
 
     private async Task<Transaction> SendInternal(Transaction sendingTransaction, Transaction receivingTransaction,

@@ -126,7 +126,7 @@ public class LndhubController : ControllerBase
     public async Task<IActionResult> Balance()
     {
         var wallet = await GetWalletWithTransactions();
-        var btc = new BtcBalance { AvailableBalance = wallet.Balance };
+        var btc = new BtcBalance { AvailableBalance = wallet.GetBalance() };
         var result = new BalanceData { BTC = btc };
 
         return Ok(result);

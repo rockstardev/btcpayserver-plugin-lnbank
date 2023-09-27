@@ -7,6 +7,7 @@
 @{
     ViewData.SetActivePage(LNbankNavPages.Wallet, "Send", Model.CurrentWallet.WalletId);
     var initialStep = Model.Bolt11 == null && Model.LnurlPay == null;
+    var balance = Model.CurrentWallet.GetBalance();
 }
 
 @section LNbankFoot {
@@ -55,7 +56,7 @@
                     <div class="input-group">
                         <input asp-for="ExplicitAmount" class="form-control flex-grow-0 text-end hide-number-spin"
                                type="number" aria-describedby="ExplicitAmount-Addon"
-                               max="@Model.CurrentWallet.Balance.ToUnit(LightMoneyUnit.Satoshi)"
+                               max="@balance.ToUnit(LightMoneyUnit.Satoshi)"
                                style="width:15ch;" autofocus required />
                         <span class="input-group-text" id="ExplicitAmount-Addon">sats</span>
                     </div>
@@ -99,14 +100,14 @@
                         <input asp-for="ExplicitAmount" class="form-control flex-grow-0 text-end hide-number-spin"
                                type="number" aria-describedby="ExplicitAmount-Addon"
                                min="@Model.LnurlPay.MinSendable.ToUnit(LightMoneyUnit.Satoshi)"
-                               max="@Math.Min(Model.CurrentWallet.Balance.ToUnit(LightMoneyUnit.Satoshi),
+                               max="@Math.Min(balance.ToUnit(LightMoneyUnit.Satoshi),
                                         Model.LnurlPay.MaxSendable.ToUnit(LightMoneyUnit.Satoshi))"
                                style="width:15ch;" autofocus required />
                         <span class="input-group-text" id="ExplicitAmount-Addon">sats</span>
                     </div>
                     <div class="form-text text-muted">
                         Minimum: <span data-sensitive>@Helpers.Sats(Model.LnurlPay.MinSendable)</span> /
-                        Maximum: <span data-sensitive>@Helpers.Sats(Math.Min(Model.CurrentWallet.Balance, Model.LnurlPay.MaxSendable))</span>
+                        Maximum: <span data-sensitive>@Helpers.Sats(Math.Min(balance, Model.LnurlPay.MaxSendable))</span>
                     </div>
                     <span asp-validation-for="ExplicitAmount" class="text-danger"></span>
                 </div>

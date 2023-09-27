@@ -26,7 +26,7 @@ public class Wallet
 
     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
-    public LightMoney Balance => GetBalance(Transactions);
+    public LightMoney GetBalance() => GetBalance(Transactions);
 
     public static LightMoney GetBalance(IEnumerable<Transaction> transactions)
     {
@@ -36,7 +36,7 @@ public class Wallet
     }
 
     [NotMapped]
-    public bool HasBalance => Balance >= LightMoney.Satoshis(1);
+    public bool HasBalance => GetBalance() >= LightMoney.Satoshis(1);
 
     public ICollection<AccessKey> AccessKeys { get; set; } = new List<AccessKey>();
 

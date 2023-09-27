@@ -274,7 +274,7 @@ public class WalletsController : ControllerBase
             Id = model.WalletId,
             Name = model.Name,
             CreatedAt = model.CreatedAt,
-            Balance = model.Balance,
+            Balance = model.GetBalance(),
             AccessKey = model.AccessKeys.FirstOrDefault(ak => ak.UserId == GetUserId())?.Key,
             LnurlPayBech32 = _lnurlService.GetLNURLPayForWallet(Request, model.WalletId, true),
             LnurlPayUri = _lnurlService.GetLNURLPayForWallet(Request, model.WalletId, false)
