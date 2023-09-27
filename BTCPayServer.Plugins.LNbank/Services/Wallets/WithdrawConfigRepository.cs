@@ -100,6 +100,9 @@ public class WithdrawConfigRepository
         if (query.BoltCardId != null)
             queryable = queryable.Where(b => b.BoltCardId == query.BoltCardId);
 
+        if (query.Status != null)
+            queryable = queryable.Where(b => b.Status == query.Status);
+
         if (query.WithdrawConfigId != null)
             queryable = queryable.Where(b => b.WithdrawConfigId == query.WithdrawConfigId);
 

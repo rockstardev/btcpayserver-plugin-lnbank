@@ -125,6 +125,12 @@ public class WithdrawConfig
             .Entity<WithdrawConfig>()
             .HasQueryFilter(w => !w.IsSoftDeleted);
 
+        builder
+            .Entity<WithdrawConfig>()
+            .HasOne(w => w.BoltCard)
+            .WithOne(w => w.WithdrawConfig)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.Entity<WithdrawConfig>()
             .Property(w => w.ReuseType)
             .HasConversion<string>();

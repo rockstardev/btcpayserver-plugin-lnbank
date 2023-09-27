@@ -17,28 +17,29 @@ namespace BTCPayServer.Plugins.LNbank.Pages.Admin;
 [Authorize(AuthenticationSchemes = AuthenticationSchemes.Cookie, Policy = LNbankPolicies.CanManageLNbank)]
 public class BoltCards : BasePageModel
 {
-    private readonly LNbankPluginDbContextFactory _lNbankPluginDbContextFactory;
+    private readonly WithdrawConfigRepository _withdrawConfigRepository;
+
+    public IEnumerable<BoltCard> PendingCards { get; set; }
 
     public BoltCards(
         UserManager<ApplicationUser> userManager,
+        WithdrawConfigRepository withdrawConfigRepository,
         WalletRepository walletRepository,
         WalletService walletService,
-        LNbankPluginDbContextFactory lNbankPluginDbContextFactory, BoltCardService boltCardService) : base(userManager, walletRepository, walletService)
+        BoltCardService boltCardService) : base(userManager, walletRepository, walletService)
     {
-        _lNbankPluginDbContextFactory = lNbankPluginDbContextFactory;
+        _withdrawConfigRepository = withdrawConfigRepository;
     }
 
     public async Task<IActionResult> OnGetAsync()
     {
-        await using var ctx = _lNbankPluginDbContextFactory.CreateContext();
-        PendingCards = await ctx.BoltCards
-            .Where(card => card.Status == BoltCardStatus.PendingActivation)
-            .Include(card => card.WithdrawConfig)
-            .ToListAsync();
+        PendingCards = await _withdrawConfigRepository.GetBoltCards(new BoltCardsQuery
+        {
+            Status = BoltCardStatus.PendingActivation,
+            IncludeWithdrawConfig = true
+        });
 
         return Page();
     }
-
-    public List<BoltCard> PendingCards { get; set; }
 }
 
