@@ -45,7 +45,7 @@ public class LNURLService
         _isDevEnv = networkProvider.NetworkType == ChainName.Regtest && env.IsDevelopment();
     }
 
-    public async Task<LNURLPayRequest> GetPaymentRequest(string destination)
+    public async Task<object> GetLNURLRequest(string destination)
     {
         var (lnurl, lnurlTag) = GetLNURL(destination);
         return await ResolveLNURL(lnurl, lnurlTag, destination);
@@ -65,6 +65,26 @@ public class LNURLService
         return bolt11;
     }
 
+    public async Task GetWithdrawal(LNURLWithdrawRequest withdrawRequest, string bolt11)
+    {
+        if (withdrawRequest.Tag != WithdrawRequestTag)
+            throw new PaymentRequestValidationException(
+                $"Expected LNURL \"{WithdrawRequestTag}\" type, got \"{withdrawRequest.Tag}\".");
+
+        try
+        {
+            var httpClient = CreateClient(withdrawRequest.Callback);
+            var withdrawResponse = await withdrawRequest.SendRequest(bolt11, httpClient, null, null);
+            if (withdrawResponse.Status != "OK")
+                throw new LNURLWithdrawException(withdrawRequest,
+                    $"LNURL withdraw failed with status {withdrawResponse.Status}: {withdrawResponse.Reason}.");
+        }
+        catch (Exception e)
+        {
+            throw new LNURLWithdrawException(withdrawRequest, $"LNURL withdraw failed: {e.Message}.");
+        }
+    }
+
     public string GetLNURLPayForWallet(HttpRequest req, string walletId, bool bech32)
     {
         var endpoint = new Uri(_linkGenerator.GetUriByAction(
@@ -74,7 +94,7 @@ public class LNURLService
         return LNURL.LNURL.EncodeUri(endpoint, "payRequest", bech32).ToString().Replace("lightning:", "");
     }
 
-    private async Task<LNURLPayRequest> ResolveLNURL(Uri lnurl, string? lnurlTag, string destination)
+    private async Task<object> ResolveLNURL(Uri lnurl, string? lnurlTag, string destination)
     {
         var type = IsLightningAddress(destination) ? "Lightning Address" : "LNURL";
         try
@@ -82,15 +102,20 @@ public class LNURLService
             if (lnurlTag is null)
             {
                 var httpClient = CreateClient(lnurl);
-                var info = (LNURLPayRequest)await LNURL.LNURL.FetchInformation(lnurl, httpClient);
-                lnurlTag = info.Tag;
-            }
-
-            if (lnurlTag.Equals(PayRequestTag, StringComparison.InvariantCultureIgnoreCase))
-            {
-                var httpClient = CreateClient(lnurl);
-                var payRequest = (LNURLPayRequest)await LNURL.LNURL.FetchInformation(lnurl, lnurlTag, httpClient);
-                return payRequest;
+                var info = await LNURL.LNURL.FetchInformation(lnurl, httpClient);
+                switch (info)
+                {
+                    case LNURLPayRequest payRequest:
+                        lnurlTag = payRequest.Tag;
+                        httpClient = CreateClient(lnurl);
+                        payRequest = (LNURLPayRequest)await LNURL.LNURL.FetchInformation(lnurl, lnurlTag, httpClient);
+                        return payRequest;
+                    case LNURLWithdrawRequest withdrawRequest:
+                        lnurlTag = withdrawRequest.Tag;
+                        httpClient = CreateClient(lnurl);
+                        withdrawRequest = (LNURLWithdrawRequest)await LNURL.LNURL.FetchInformation(lnurl, lnurlTag, httpClient);
+                        return withdrawRequest;
+                }
             }
         }
         catch (HttpRequestException ex) when (_isDevEnv &&

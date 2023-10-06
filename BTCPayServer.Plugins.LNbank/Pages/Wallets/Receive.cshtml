@@ -1,4 +1,5 @@
-@page "/plugins/lnbank/wallets/{walletId}/receive"
+@page "/plugins/lnbank/wallets/{walletId}/receive/{handler?}"
+@using BTCPayServer.Lightning
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.ReceiveModel
 
 @{
@@ -16,19 +17,43 @@
 {
     <div asp-validation-summary="All" class="alert alert-danger mb-4"></div>
 }
-
-<form method="post">
-    <div class="form-group">
-        <label asp-for="Amount" class="form-label" data-required></label>
-        <div class="input-group">
-            <input asp-for="Amount" class="form-control flex-grow-0 text-end hide-number-spin" type="number" aria-describedby="Amount-Addon" style="width:15ch;" autofocus required />
-            <span class="input-group-text" id="Amount-Addon">sats</span>
+<form method="post" asp-page-handler="invoice">
+    @if (!string.IsNullOrEmpty(Model.LNURLW))
+    {
+        <input asp-for="LNURLW" type="hidden" required />
+    }
+    @if (!Model.IsDefinedAmount)
+    {
+        <div class="form-group">
+            <label asp-for="Amount" class="form-label" data-required></label>
+            <div class="input-group">
+                <input asp-for="Amount" class="form-control flex-grow-0 text-end hide-number-spin"
+                       type="number" aria-describedby="Amount-Addon"
+                       min="@(Model.LnurlWithdraw?.MinWithdrawable.ToUnit(LightMoneyUnit.Satoshi) ?? 0)"
+                       max="@(Model.LnurlWithdraw?.MaxWithdrawable.ToUnit(LightMoneyUnit.Satoshi) ?? 2100000000000)"
+                       style="width:15ch;" autofocus required/>
+                <span class="input-group-text" id="Amount-Addon">sats</span>
+            </div>
+            @if (Model.LnurlWithdraw != null)
+            {
+                <div class="form-text text-muted">
+                    @if (Model.LnurlWithdraw.MinWithdrawable > 0)
+                    {
+                        <span>Minimum: <span data-sensitive>@Helpers.Sats(Model.LnurlWithdraw.MinWithdrawable)</span> / </span>
+                    }
+                    Maximum: <span data-sensitive>@Helpers.Sats(Model.LnurlWithdraw.MaxWithdrawable)</span>
+                </div>
+            }
+            <span asp-validation-for="Amount" class="text-danger"></span>
         </div>
-        <span asp-validation-for="Amount" class="text-danger"></span>
-    </div>
+    }
+    else
+    {
+        <p>Amount: <strong id="LNbank-Amount" data-sensitive>@Helpers.Sats(Model.Amount)</strong></p>
+    }
     <div class="form-group mb-3">
         <label asp-for="Description" class="form-label"></label>
-        <input asp-for="Description" class="form-control" style="max-width:70ch;" />
+        <input asp-for="Description" class="form-control" style="max-width:70ch;"/>
         <span asp-validation-for="Description" class="text-danger"></span>
     </div>
     <div class="form-group form-check">
@@ -59,8 +84,26 @@
         </div>
     </div>
     <div class="form-group pt-3">
-        <input type="submit" value="Create invoice" class="btn btn-primary" id="LNbank-CreateInvoice" />
+        <input type="submit" value="Create invoice" class="btn btn-primary" id="LNbank-CreateInvoice"/>
     </div>
 </form>
 
-<p class="mt-5 text-muted">Alternatively you can use <a asp-page="./ShareLNURL" asp-route-walletId="@Model.CurrentWallet.WalletId" target="lnurl-@Model.CurrentWallet.WalletId">LNURL</a> to receive to your wallet.</p>
+@if (Model.LnurlWithdraw == null)
+{
+    <p class="mt-5 text-muted">
+        Alternatively you can use
+        <a asp-page="./ShareLNURL" asp-route-walletId="@Model.CurrentWallet.WalletId" target="lnurl-@Model.CurrentWallet.WalletId">LNURL Pay</a> or
+        <button class="btn btn-link fw-semibold p-0" type="button" id="LNURLWithdrawButton" data-bs-toggle="collapse" data-bs-target="#LNURLWithdraw" aria-expanded="false" aria-controls="LNURLWithdraw">LNURL Withdraw</button>
+        to receive to your wallet.
+    </p>
+    <form method="post" asp-page-handler="lnurl" id="LNURLWithdraw" class="collapse">
+        <div class="form-group">
+            <div class="form-group">
+                <label asp-for="LNURLW" class="form-label" data-required></label>
+                <textarea asp-for="LNURLW" class="form-control" rows="4" style="max-width:70ch;"></textarea>
+                <span asp-validation-for="LNURLW" class="text-danger"></span>
+            </div>
+        </div>
+        <input type="submit" value="Withdraw" class="btn btn-primary" id="LNbank-Withdraw"/>
+    </form>
+}

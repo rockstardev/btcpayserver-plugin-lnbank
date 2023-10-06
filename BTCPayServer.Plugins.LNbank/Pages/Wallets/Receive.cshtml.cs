@@ -7,12 +7,11 @@ using BTCPayServer.Client.Models;
 using BTCPayServer.Data;
 using BTCPayServer.Lightning;
 using BTCPayServer.Plugins.LNbank.Authentication;
-using BTCPayServer.Plugins.LNbank.Data.Models;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
+using LNURL;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
 using AuthenticationSchemes = BTCPayServer.Abstractions.Constants.AuthenticationSchemes;
 
@@ -32,7 +31,6 @@ public class ReceiveModel : BasePageModel
 
     [BindProperty]
     [DisplayName("Amount")]
-    [Required]
     [Range(0, 2100000000000)]
     public long Amount { get; set; }
 
@@ -43,6 +41,13 @@ public class ReceiveModel : BasePageModel
     [BindProperty]
     [DisplayName("Custom invoice expiry")]
     public int? Expiry { get; set; }
+
+    [BindProperty]
+    [DisplayName("LNURL Withdraw")]
+    public string LNURLW { get; set; }
+
+    public LNURLWithdrawRequest LnurlWithdraw { get; set; }
+    public bool IsDefinedAmount { get; set; }
 
     public ReceiveModel(
         ILogger<ReceiveModel> logger,
@@ -63,7 +68,7 @@ public class ReceiveModel : BasePageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync(string walletId)
+    public async Task<IActionResult> OnPostInvoiceAsync(string walletId)
     {
         if (CurrentWallet == null)
             return NotFound();
@@ -72,6 +77,16 @@ public class ReceiveModel : BasePageModel
 
         try
         {
+            if (!string.IsNullOrEmpty(LNURLW))
+            {
+                LnurlWithdraw = await WalletService.GetWithdrawRequest(LNURLW);
+                IsDefinedAmount = LnurlWithdraw.MinWithdrawable == LnurlWithdraw.MaxWithdrawable;
+                if (IsDefinedAmount)
+                {
+                    Amount = (long)LnurlWithdraw.MaxWithdrawable.ToUnit(LightMoneyUnit.Satoshi);
+                }
+            }
+
             var amount = LightMoney.Satoshis(Amount).MilliSatoshi;
             var memo = !string.IsNullOrEmpty(Description) ? Description : null;
             var expiry = Expiry is > 0 ? TimeSpan.FromMinutes(Expiry.Value) : WalletService.ExpiryDefault;
@@ -82,17 +97,53 @@ public class ReceiveModel : BasePageModel
                 Description = AttachDescription && !string.IsNullOrEmpty(memo) ? memo : null,
                 PrivateRouteHints = PrivateRouteHints
             };
-
             var transaction = await WalletService.Receive(CurrentWallet, req, memo);
+
+            if (LnurlWithdraw != null)
+            {
+                await WalletService.GetWithdrawal(LnurlWithdraw, transaction.PaymentRequest);
+
+                TempData[WellKnownTempData.SuccessMessage] = "LNURL Withdraw request sent.";
+            }
             return RedirectToPage("/Transactions/Details", new { walletId, transaction.TransactionId });
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Invoice creation failed: {Message}", exception.Message);
+            var text = LnurlWithdraw != null ? "LNURL Withdraw" : "Invoice creation";
 
-            TempData[WellKnownTempData.ErrorMessage] = $"Invoice creation failed: {exception.Message}";
+            _logger.LogError(exception, "{Text} failed: {Message}", text, exception.Message);
+
+            TempData[WellKnownTempData.ErrorMessage] = $"{text} failed: {exception.Message}";
+        }
+
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostLnurlAsync(string walletId)
+    {
+        if (CurrentWallet == null)
+            return NotFound();
+        if (!ModelState.IsValid)
+            return Page();
+
+        try
+        {
+            LNURLW = LNURLW.Trim();
+            LnurlWithdraw = await WalletService.GetWithdrawRequest(LNURLW);
+            IsDefinedAmount = LnurlWithdraw.MinWithdrawable == LnurlWithdraw.MaxWithdrawable;
+            Amount = (long)LnurlWithdraw.MaxWithdrawable.ToUnit(LightMoneyUnit.Satoshi);
+            Description = !string.IsNullOrEmpty(LnurlWithdraw.DefaultDescription) ? LnurlWithdraw.DefaultDescription : null;
+
+            TempData[WellKnownTempData.SuccessMessage] = "Continue with the values resolved via LNURL Withdraw request.";
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Resolving LNURL Withdraw failed: {Message}", exception.Message);
+
+            TempData[WellKnownTempData.ErrorMessage] = $"Resolving LNURL Withdraw failed: {exception.Message}";
         }
 
         return Page();
     }
 }
+

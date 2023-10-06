@@ -338,12 +338,14 @@ public class WalletService
         return await _lnurlService.GetBolt11(lnurlPay, amount, comment);
     }
 
+    public async Task GetWithdrawal(LNURLWithdrawRequest lnurlWithdraw, string bolt11)
+    {
+        await _lnurlService.GetWithdrawal(lnurlWithdraw, bolt11);
+    }
+
     public async Task<(BOLT11PaymentRequest? bolt11, LNURLPayRequest? lnurlPay)> GetPaymentRequests(string destination)
     {
-        var index = destination.IndexOf("lightning=", StringComparison.InvariantCultureIgnoreCase);
-        var dest = index == -1
-            ? destination.Replace("lightning:", "", StringComparison.InvariantCultureIgnoreCase)
-            : destination.Substring(index + 10);
+        var dest = TrimLightning(destination);
         try
         {
             var bolt11 = ParsePaymentRequest(dest);
@@ -351,9 +353,26 @@ public class WalletService
         }
         catch (Exception)
         {
-            var lnurlPay = await _lnurlService.GetPaymentRequest(dest);
-            return (null, lnurlPay);
+            var lnurlRequest = await _lnurlService.GetLNURLRequest(dest);
+            if (lnurlRequest is LNURLPayRequest lnurlPay)
+            {
+                return (null, lnurlPay);
+            }
+            var type = lnurlRequest is LNURLWithdrawRequest ? LNURLService.WithdrawRequestTag : lnurlRequest.GetType().ToString();
+            throw new PaymentRequestValidationException($"Expected LNURL \"{LNURLService.PayRequestTag}\" type, got \"{type}\".");
         }
+    }
+
+    public async Task<LNURLWithdrawRequest> GetWithdrawRequest(string withdraw)
+    {
+        var dest = TrimLightning(withdraw);
+        var lnurlRequest = await _lnurlService.GetLNURLRequest(dest);
+        if (lnurlRequest is LNURLWithdrawRequest lnurlWithdraw)
+        {
+            return lnurlWithdraw;
+        }
+        var type = lnurlRequest is LNURLPayRequest ? LNURLService.PayRequestTag : lnurlRequest.GetType().ToString();
+        throw new PaymentRequestValidationException($"Expected LNURL \"{LNURLService.WithdrawRequestTag}\" type, got \"{type}\".");
     }
 
     public async Task<bool> Cancel(string invoiceId)
@@ -479,6 +498,14 @@ public class WalletService
                 transaction.PaymentHash,
                 Event = eventName
             });
+    }
+
+    private static string TrimLightning(string str)
+    {
+        var index = str.IndexOf("lightning=", StringComparison.InvariantCultureIgnoreCase);
+        return index == -1
+            ? str.Replace("lightning:", "", StringComparison.InvariantCultureIgnoreCase)
+            : str[(index + 10)..];
     }
 
     private static string Sats(LightMoney amount)
