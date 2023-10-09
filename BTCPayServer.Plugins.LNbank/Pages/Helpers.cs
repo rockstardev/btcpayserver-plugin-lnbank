@@ -8,7 +8,7 @@ public static class Helpers
 {
     public static string Sats(LightMoney amount, bool includeUnit = true)
     {
-        return amount >= LightMoney.Satoshis(1) || amount <= LightMoney.Satoshis(-1)
+        return amount >= LightMoney.Satoshis(1) || amount <= LightMoney.Satoshis(-1) || amount == LightMoney.Zero
             ? $"{Math.Floor(amount.ToUnit(LightMoneyUnit.Satoshi))}{(includeUnit ? " sats" : string.Empty)}"
             : Millisats(amount, includeUnit);
     }
