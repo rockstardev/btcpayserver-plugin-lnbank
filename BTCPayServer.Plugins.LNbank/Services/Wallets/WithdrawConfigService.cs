@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using BTCPayServer.Lightning;
 using BTCPayServer.Plugins.LNbank.Data.Models;
 
@@ -9,6 +12,7 @@ namespace BTCPayServer.Plugins.LNbank.Services.Wallets;
 public class WithdrawConfigService
 {
     private readonly WalletRepository _walletRepository;
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _balanceSemaphores = new();
 
     public WithdrawConfigService(
         WalletRepository walletRepository)
@@ -46,9 +50,13 @@ public class WithdrawConfigService
 
     public LightMoney GetSpentTotal(WithdrawConfig withdrawConfig) => GetSpentAmount(withdrawConfig);
 
-    public LightMoney GetRemainingBalance(WithdrawConfig withdrawConfig, bool total = false)
+    public async Task<LightMoney> GetRemainingBalance(WithdrawConfig withdrawConfig, bool total = false, CancellationToken cancellationToken = default)
     {
-        var walletBalance = _walletRepository.GetBalance(withdrawConfig.Wallet);
+        var walletBalance = await _walletRepository.GetBalance(withdrawConfig.Wallet, cancellationToken);
+
+        var semaphore = _balanceSemaphores.GetOrAdd(withdrawConfig.WithdrawConfigId, new SemaphoreSlim(1, 1));
+        await semaphore.WaitAsync(cancellationToken);
+
         var hasTotalLimit = withdrawConfig.MaxTotal != null && withdrawConfig.MaxTotal > LightMoney.Zero;
         var hasPerUseLimit = withdrawConfig.MaxPerUse != null && withdrawConfig.MaxPerUse > LightMoney.Zero;
         var upperLimit = total ? withdrawConfig.MaxTotal : withdrawConfig.MaxPerUse;
@@ -67,6 +75,8 @@ public class WithdrawConfigService
             remainingMinusFee = walletBalance;
         }
 
+        semaphore.Release();
+
         return Math.Min(remainingMinusFee, walletBalance);
     }
 
@@ -76,6 +86,7 @@ public class WithdrawConfigService
 
         var limit = withdrawConfig.Limit!.Value;
         var payments = GetPaymentsInInterval(withdrawConfig);
+
         return payments.Count >= limit ? 0 : limit - (uint)payments.Count;
     }
 }

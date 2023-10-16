@@ -122,9 +122,9 @@ public class BoltCardController : ControllerBase
         Reason = reason
     };
 
-    private LNURLWithdrawRequest GetWithdrawRequest(WithdrawConfig withdrawConfig, string authorizationCode)
+    private async Task<LNURLWithdrawRequest> GetWithdrawRequest(WithdrawConfig withdrawConfig, string authorizationCode)
     {
-        var remaining = _withdrawConfigService.GetRemainingBalance(withdrawConfig);
+        var remaining = await _withdrawConfigService.GetRemainingBalance(withdrawConfig);
         var oneSat = LightMoney.Satoshis(1);
         var request = new LNURLWithdrawRequest
         {

@@ -171,9 +171,9 @@ public class LnurlController : ControllerBase
             values: new { walletId }, Request.Scheme, Request.Host, Request.PathBase) ?? string.Empty)
     };
 
-    private LNURLWithdrawRequest GetWithdrawRequest(WithdrawConfig withdrawConfig)
+    private async Task<LNURLWithdrawRequest> GetWithdrawRequest(WithdrawConfig withdrawConfig)
     {
-        var remaining = _withdrawConfigService.GetRemainingBalance(withdrawConfig);
+        var remaining = await _withdrawConfigService.GetRemainingBalance(withdrawConfig);
         var oneSat = LightMoney.Satoshis(1);
         var thisUri = new Uri(Request.GetCurrentUrl());
         var request = new LNURLWithdrawRequest

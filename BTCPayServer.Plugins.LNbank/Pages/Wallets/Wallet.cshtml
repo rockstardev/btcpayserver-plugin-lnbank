@@ -10,7 +10,7 @@
 
 @{
     ViewData.SetActivePage(LNbankNavPages.Wallet, Model.CurrentWallet.Name, Model.CurrentWallet.WalletId);
-    var balance = WalletService.GetBalance(Model.CurrentWallet);
+    var balance = await WalletService.GetBalance(Model.CurrentWallet);
 }
 
 @section LNbankHead {

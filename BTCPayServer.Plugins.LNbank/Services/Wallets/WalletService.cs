@@ -48,11 +48,11 @@ public class WalletService
         _network = btcPayNetworkProvider.GetNetwork<BTCPayNetwork>(BTCPayService.CryptoCode).NBitcoinNetwork;
     }
 
-    public bool HasBalance(Wallet wallet) => GetBalance(wallet) >= LightMoney.Satoshis(1);
+    public async Task<bool> HasBalance(Wallet wallet) => await GetBalance(wallet) >= LightMoney.Satoshis(1);
 
-    public LightMoney GetBalance(Wallet wallet)
+    public async Task<LightMoney> GetBalance(Wallet wallet)
     {
-        return _walletRepository.GetBalance(wallet);
+        return await _walletRepository.GetBalance(wallet);
     }
 
     public LightMoney GetBalance(IEnumerable<Transaction> transactions)
@@ -127,7 +127,7 @@ public class WalletService
     public async Task<Transaction> Send(WithdrawConfig withdrawConfig, string paymentRequest)
     {
         var bolt11 = ParsePaymentRequest(paymentRequest);
-        var remaining = _withdrawConfigService.GetRemainingBalance(withdrawConfig);
+        var remaining = await _withdrawConfigService.GetRemainingBalance(withdrawConfig);
 
         if (bolt11.MinimumAmount > remaining)
             throw new PaymentRequestValidationException($"Payment request amount ({bolt11.MinimumAmount.ToUnit(LightMoneyUnit.Satoshi)} sats) was more than the remaining limit ({remaining.ToUnit(LightMoneyUnit.Satoshi)} sats)");
@@ -145,7 +145,7 @@ public class WalletService
         var amount = bolt11.MinimumAmount == LightMoney.Zero ? explicitAmount : bolt11.MinimumAmount;
         if (amount == null)
             throw new ArgumentException("Amount must be defined.", nameof(amount));
-        var balance = GetBalance(wallet);
+        var balance = await GetBalance(wallet);
         if (balance < amount)
             throw new InsufficientBalanceException(
                 $"Insufficient balance: {Sats(balance)} — tried to send {Sats(amount)}.");
@@ -154,7 +154,6 @@ public class WalletService
         var paymentRequest = bolt11.ToString();
         var receivingTransaction = await ValidatePaymentRequest(paymentRequest);
         var isInternal = !string.IsNullOrEmpty(receivingTransaction?.InvoiceId);
-
         var sendingTransaction = new Transaction
         {
             WalletId = wallet.WalletId,
@@ -169,7 +168,7 @@ public class WalletService
 
         var transaction = await (isInternal && receivingTransaction != null
             ? SendInternal(sendingTransaction, receivingTransaction, cancellationToken)
-            : SendExternal(sendingTransaction, amount, GetBalance(wallet), maxFeePercent, cancellationToken));
+            : SendExternal(sendingTransaction, amount, balance, maxFeePercent, cancellationToken));
 
         return transaction;
     }

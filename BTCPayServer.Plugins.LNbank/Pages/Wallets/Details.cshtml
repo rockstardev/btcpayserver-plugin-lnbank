@@ -5,6 +5,7 @@
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.DetailsModel
 @{
     ViewData.SetActivePage(LNbankNavPages.WalletSettings, Model.CurrentWallet.Name, Model.CurrentWallet.WalletId);
+    var balance = await WalletService.GetBalance(Model.CurrentWallet);
     string lndhubUrl = null;
     var adminKey = Model.CurrentWallet.AccessKeys.FirstOrDefault(ak => ak.Level == AccessLevel.Admin);
     if (adminKey != null)
@@ -23,8 +24,8 @@
         Balance
     </dt>
     <dd class="col-sm-9 col-xl-10" id="LNbank-Balance">
-        <span data-sensitive>@Helpers.Sats(WalletService.GetBalance(Model.CurrentWallet))</span> /
-        <span data-sensitive>@Helpers.Millisats(WalletService.GetBalance(Model.CurrentWallet))</span>
+        <span data-sensitive>@Helpers.Sats(balance)</span> /
+        <span data-sensitive>@Helpers.Millisats(balance)</span>
     </dd>
     <dt class="col-sm-3 col-xl-2">
         @Html.DisplayNameFor(model => model.CurrentWallet.WalletId)

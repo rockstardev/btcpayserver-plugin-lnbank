@@ -136,7 +136,7 @@
                                     @if (withdrawConfig.MaxTotal != null && withdrawConfig.MaxTotal > 0)
                                     {
                                         <span>@Helpers.Sats(withdrawConfig.MaxTotal)</span>
-                                        <span>(@Helpers.Sats(WithdrawConfigService.GetRemainingBalance(withdrawConfig, true)) remaining)</span>
+                                        <span data-bs-toggle="tooltip" title="Fee reserve deducted">(@Helpers.Sats(await WithdrawConfigService.GetRemainingBalance(withdrawConfig, true)) remaining)</span>
                                     }
                                     else
                                     {

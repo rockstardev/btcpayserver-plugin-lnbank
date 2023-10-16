@@ -122,7 +122,7 @@ public class WalletsController : ControllerBase
         if (wallet == null)
             return this.CreateAPIError(404, "wallet-not-found", "The wallet was not found");
 
-        if (_walletService.HasBalance(wallet) && !User.IsInRole(Roles.ServerAdmin))
+        if (await _walletService.HasBalance(wallet) && !User.IsInRole(Roles.ServerAdmin))
         {
             return this.CreateAPIError("wallet-not-empty", "This wallet still has a balance.");
         }
@@ -266,13 +266,13 @@ public class WalletsController : ControllerBase
         return !ModelState.IsValid ? this.CreateValidationError(ModelState) : null;
     }
 
-    private WalletData FromModel(Wallet model) =>
+    private async Task<WalletData> FromModel(Wallet model) =>
         new()
         {
             Id = model.WalletId,
             Name = model.Name,
             CreatedAt = model.CreatedAt,
-            Balance = _walletService.GetBalance(model),
+            Balance = await _walletService.GetBalance(model),
             AccessKey = model.AccessKeys.FirstOrDefault(ak => ak.UserId == GetUserId())?.Key,
             LnurlPayBech32 = _lnurlService.GetLNURLPayForWallet(Request, model.WalletId, true),
             LnurlPayUri = _lnurlService.GetLNURLPayForWallet(Request, model.WalletId, false)

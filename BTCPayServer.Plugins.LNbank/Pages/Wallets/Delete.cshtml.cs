@@ -33,7 +33,7 @@ public class DeleteModel : BasePageModel
         if (CurrentWallet == null)
             return NotFound();
 
-        if (WalletService.HasBalance(CurrentWallet) && !User.IsInRole(Roles.ServerAdmin))
+        if (await WalletService.HasBalance(CurrentWallet) && !User.IsInRole(Roles.ServerAdmin))
         {
             TempData[WellKnownTempData.ErrorMessage] = "This wallet still has a balance.";
             return Page();

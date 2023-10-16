@@ -51,7 +51,7 @@
                         <h5 class="card-title">@wallet.Name</h5>
                         <div class="card-text d-flex flex-wrap align-items-center justify-content-between gap-2">
                             <span class="badge bg-light fs-6">
-                                <span class="data-sensitive">@Helpers.Sats(WalletService.GetBalance(wallet))</span>
+                                <span class="data-sensitive">@Helpers.Sats(await WalletService.GetBalance(wallet))</span>
                             </span>
                             <span class="text-muted" data-sensitive>
                                 @wallet.Transactions.Count transaction@(wallet.Transactions.Count == 1 ? "" : "s")

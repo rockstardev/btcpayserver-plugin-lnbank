@@ -41,21 +41,20 @@ public class IndexModel : BasePageModel
             TempData[WellKnownTempData.ErrorMessage] = "LNbank requires an internal Lightning node to be configured.";
         }
 
-        Wallets = await WalletRepository.GetWallets(new WalletsQuery
+        Wallets = (await WalletRepository.GetWallets(new WalletsQuery
         {
             UserId = new[] { UserId },
             IncludeTransactions = true
-        });
+        })).ToList();
 
-        var list = Wallets.ToList();
-        if (!list.Any())
+        if (!Wallets.Any())
         {
             return RedirectToPage("./Create");
         }
 
-        TotalBalance = Wallets
-            .Select(w => WalletService.GetBalance(w))
-            .Aggregate((res, current) => res + current);
+        TotalBalance = await Wallets
+            .Select(async w => await WalletService.GetBalance(w))
+            .Aggregate(async (res, current) => await res + await current);
 
         // check LNbank reserves
         TotalLiabilities = await WalletService.GetLiabilitiesTotal();

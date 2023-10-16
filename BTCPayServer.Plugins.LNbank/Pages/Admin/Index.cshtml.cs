@@ -57,7 +57,7 @@ public class IndexModel : BasePageModel
             if (user == null) continue;
 
             var userWallets = walletsByUserId[userId].ToList();
-            var userTotal = userWallets.Aggregate(LightMoney.Zero, (total, wallet) => total + WalletService.GetBalance(wallet));
+            var userTotal = await userWallets.Aggregate(Task.FromResult(LightMoney.Zero), async (total, wallet) => await total + await WalletService.GetBalance(wallet));
             WalletsByUserId[userId] = new WalletsViewModel
             {
                 User = user,

@@ -6,13 +6,14 @@
 
 @{
     ViewData.SetActivePage(LNbankNavPages.WalletSettings, $"Delete \"{Model.CurrentWallet.Name}\"", Model.CurrentWallet.WalletId);
+    var hasBalance = await WalletService.HasBalance(Model.CurrentWallet);
 }
 
 <partial name="_WalletHeader" model="Model.CurrentWallet"/>
 <partial name="_Nav" model="Model.CurrentWallet"/>
 <partial name="_StatusMessage"/>
 
-@if (WalletService.HasBalance(Model.CurrentWallet))
+@if (hasBalance)
 {
     <p>This wallet still has a balance. Please <a asp-page="./Send" asp-route-walletId="@Model.CurrentWallet.WalletId">transfer the funds</a> before deleting it.</p>
 

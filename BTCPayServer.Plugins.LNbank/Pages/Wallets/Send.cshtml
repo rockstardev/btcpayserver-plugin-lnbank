@@ -9,7 +9,7 @@
 @{
     ViewData.SetActivePage(LNbankNavPages.Wallet, "Send", Model.CurrentWallet.WalletId);
     var initialStep = Model.Bolt11 == null && Model.LnurlPay == null;
-    var balance = WalletService.GetBalance(Model.CurrentWallet);
+    var balance = await WalletService.GetBalance(Model.CurrentWallet);
 }
 
 @section LNbankFoot {

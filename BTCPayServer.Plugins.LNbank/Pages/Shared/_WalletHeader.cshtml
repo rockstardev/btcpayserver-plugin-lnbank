@@ -3,7 +3,7 @@
 @inject WalletService WalletService
 @model BTCPayServer.Plugins.LNbank.Data.Models.Wallet
 @{
-    var balance = WalletService.GetBalance(Model);
+    var balance = await WalletService.GetBalance(Model);
 }
 <div class="sticky-header-setup"></div>
 <div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-3">

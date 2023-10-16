@@ -120,7 +120,7 @@ public class LightningController : ControllerBase
         {
             // load wallet including transactions to see the balance
             var wallet = await GetWalletWithTransactions(Wallet.WalletId);
-            var offchain = new OffchainBalance { Local = _walletService.GetBalance(wallet) };
+            var offchain = new OffchainBalance { Local = await _walletService.GetBalance(wallet) };
             var balance = new LightningNodeBalance(null, offchain);
             return Ok(balance);
         }
