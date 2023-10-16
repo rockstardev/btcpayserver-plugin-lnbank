@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Receive via LNURL Withdraw.
 
+### Fixed
+
+- Withdraw: Fix "Spendable amount per use" calculation. (#43)
+
 ## [1.7.3]
 
 ### Fixed

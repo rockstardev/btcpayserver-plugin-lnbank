@@ -98,24 +98,23 @@ public class LNURLService
     {
         var type = IsLightningAddress(destination) ? "Lightning Address" : "LNURL";
         try
-        {
+    {
             if (lnurlTag is null)
             {
-                var httpClient = CreateClient(lnurl);
-                var info = await LNURL.LNURL.FetchInformation(lnurl, httpClient);
-                switch (info)
+                var infoClient = CreateClient(lnurl);
+                var info = await LNURL.LNURL.FetchInformation(lnurl, infoClient);
+                lnurlTag = info switch
                 {
-                    case LNURLPayRequest payRequest:
-                        lnurlTag = payRequest.Tag;
-                        httpClient = CreateClient(lnurl);
-                        payRequest = (LNURLPayRequest)await LNURL.LNURL.FetchInformation(lnurl, lnurlTag, httpClient);
-                        return payRequest;
-                    case LNURLWithdrawRequest withdrawRequest:
-                        lnurlTag = withdrawRequest.Tag;
-                        httpClient = CreateClient(lnurl);
-                        withdrawRequest = (LNURLWithdrawRequest)await LNURL.LNURL.FetchInformation(lnurl, lnurlTag, httpClient);
-                        return withdrawRequest;
-                }
+                    LNURLPayRequest payRequest => payRequest.Tag,
+                    LNURLWithdrawRequest withdrawRequest => withdrawRequest.Tag,
+                    _ => lnurlTag
+                };
+            }
+
+            if (!string.IsNullOrEmpty(lnurlTag))
+            {
+                var httpClient = CreateClient(lnurl);
+                return await LNURL.LNURL.FetchInformation(lnurl, lnurlTag, httpClient);
             }
         }
         catch (HttpRequestException ex) when (_isDevEnv &&

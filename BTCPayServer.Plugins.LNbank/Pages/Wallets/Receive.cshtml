@@ -90,13 +90,14 @@
 
 @if (Model.LnurlWithdraw == null)
 {
+    var isShown = !string.IsNullOrEmpty(Model.LNURLW);
     <p class="mt-5 text-muted">
         Alternatively you can use
         <a asp-page="./ShareLNURL" asp-route-walletId="@Model.CurrentWallet.WalletId" target="lnurl-@Model.CurrentWallet.WalletId">LNURL Pay</a> or
-        <button class="btn btn-link fw-semibold p-0" type="button" id="LNURLWithdrawButton" data-bs-toggle="collapse" data-bs-target="#LNURLWithdraw" aria-expanded="false" aria-controls="LNURLWithdraw">LNURL Withdraw</button>
+        <button class="btn btn-link fw-semibold p-0" type="button" id="LNURLWithdrawButton" data-bs-toggle="collapse" data-bs-target="#LNURLWithdraw" aria-expanded="@(isShown ? "true" : "false")" aria-controls="LNURLWithdraw">LNURL Withdraw</button>
         to receive to your wallet.
     </p>
-    <form method="post" asp-page-handler="lnurl" id="LNURLWithdraw" class="collapse">
+    <form method="post" asp-page-handler="lnurl" id="LNURLWithdraw" class="collapse@(isShown ? " show" : "")">
         <div class="form-group">
             <div class="form-group">
                 <label asp-for="LNURLW" class="form-label" data-required></label>

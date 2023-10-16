@@ -59,16 +59,26 @@ public class WithdrawConfigService
 
         var hasTotalLimit = withdrawConfig.MaxTotal != null && withdrawConfig.MaxTotal > LightMoney.Zero;
         var hasPerUseLimit = withdrawConfig.MaxPerUse != null && withdrawConfig.MaxPerUse > LightMoney.Zero;
-        var upperLimit = total ? withdrawConfig.MaxTotal : withdrawConfig.MaxPerUse;
-        var limit = hasTotalLimit || hasPerUseLimit ? upperLimit : null;
-        var payments = GetPaymentsInInterval(withdrawConfig);
-        if (withdrawConfig.Limit is > 0 && payments.Count >= withdrawConfig.Limit) return LightMoney.Zero;
+
+        // usage limit
+        if (GetRemainingUsages(withdrawConfig) == 0) return LightMoney.Zero;
+
+        // amount limit
+        var limit = walletBalance;
+        if (hasPerUseLimit && !total)
+        {
+            limit = limit > withdrawConfig.MaxPerUse ? withdrawConfig.MaxPerUse : limit;
+        }
+        if (hasTotalLimit)
+        {
+            var limitTotal = withdrawConfig.MaxTotal - GetSpentTotal(withdrawConfig);
+            limit = limitTotal < limit ? limitTotal : limit;
+        }
 
         // Account for fees
-        var remaining = (limit ?? walletBalance) + GetSpentAmount(payments);
-        var remainingInSats = remaining.ToUnit(LightMoneyUnit.Satoshi);
+        var remainingInSats = limit.ToUnit(LightMoneyUnit.Satoshi);
         var maxFeeAmount = LightMoney.Satoshis(remainingInSats * (decimal)WalletService.MaxFeePercentDefault / 100);
-        var remainingMinusFee = remaining - maxFeeAmount;
+        var remainingMinusFee = limit - maxFeeAmount;
         // allow sweeping transaction if the amount is below threshold and empties the wallet
         if (remainingInSats == walletBalance.ToUnit(LightMoneyUnit.Satoshi) && remainingInSats < 10000)
         {

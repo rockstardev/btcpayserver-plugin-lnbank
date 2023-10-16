@@ -123,7 +123,7 @@ public class LnurlController : ControllerBase
             return BadRequest(GetError("The withdraw configuration was not found"));
         }
 
-        var request = GetWithdrawRequest(withdrawConfig);
+        var request = await GetWithdrawRequest(withdrawConfig);
         if (string.IsNullOrEmpty(pr))
         {
             return Ok(request);
