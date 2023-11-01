@@ -46,7 +46,7 @@ public class IndexModel : BasePageModel
                 IncludeTransactions = true,
                 IncludeUser = true,
                 IncludeSoftDeleted = true,
-                IsServerAdmin = User.IsInRole(Roles.ServerAdmin)
+                IsServerAdmin = IsServerAdmin
             }))
             .GroupBy(w => w.UserId)
             .ToDictionary(g => g.Key, g => g.AsEnumerable());

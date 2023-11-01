@@ -1,9 +1,7 @@
-using System;
 using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Constants;
 using BTCPayServer.Data;
 using BTCPayServer.Plugins.LNbank.Authentication;
-using BTCPayServer.Plugins.LNbank.Data.Models;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -33,9 +31,13 @@ public class DeleteModel : BasePageModel
         if (CurrentWallet == null)
             return NotFound();
 
-        if (await WalletService.HasBalance(CurrentWallet) && !User.IsInRole(Roles.ServerAdmin))
+        var hasBalance = await WalletService.HasBalance(CurrentWallet);
+        var hasBoltCard = await WalletService.HasActiveBoltCard(CurrentWallet);
+        if ((hasBalance || hasBoltCard) && !IsServerAdmin)
         {
-            TempData[WellKnownTempData.ErrorMessage] = "This wallet still has a balance.";
+            TempData[WellKnownTempData.ErrorMessage] = hasBalance
+                ? "This wallet still has a balance."
+                : "This wallet still has a withdraw config and Bolt Card associated with it. Make sure to backup the wipe keys for any associated Bolt Card!";
             return Page();
         }
 

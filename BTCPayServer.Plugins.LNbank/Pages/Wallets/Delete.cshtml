@@ -7,15 +7,23 @@
 @{
     ViewData.SetActivePage(LNbankNavPages.WalletSettings, $"Delete \"{Model.CurrentWallet.Name}\"", Model.CurrentWallet.WalletId);
     var hasBalance = await WalletService.HasBalance(Model.CurrentWallet);
+    var hasBoltCard = await WalletService.HasActiveBoltCard(Model.CurrentWallet);
 }
 
 <partial name="_WalletHeader" model="Model.CurrentWallet"/>
 <partial name="_Nav" model="Model.CurrentWallet"/>
 <partial name="_StatusMessage"/>
 
-@if (hasBalance)
+@if (hasBalance || hasBoltCard)
 {
-    <p>This wallet still has a balance. Please <a asp-page="./Send" asp-route-walletId="@Model.CurrentWallet.WalletId">transfer the funds</a> before deleting it.</p>
+    @if (hasBalance)
+    {
+        <p>This wallet still has a balance. Please <a asp-page="./Send" asp-route-walletId="@Model.CurrentWallet.WalletId">transfer the funds</a> before deleting it.</p>
+    }
+    @if (hasBoltCard)
+    {
+        <p>This wallet still has a withdraw config and Bolt Card associated with it. Make sure to <a asp-page="./WithdrawConfigs" asp-route-walletId="@Model.CurrentWallet.WalletId">backup the wipe keys</a> for any associated Bolt Card!</p>
+    }
 
     <form method="post" permission="@LNbankPolicies.CanManageLNbank">
         <p>As an admin, you can override this requirement and delete anyway.</p>

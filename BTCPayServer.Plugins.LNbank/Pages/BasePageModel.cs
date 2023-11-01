@@ -27,17 +27,17 @@ public abstract class BasePageModel : PageModel
     }
 
     protected string UserId => UserManager.GetUserId(User);
+    protected bool IsServerAdmin => User.IsInRole(Roles.ServerAdmin);
 
     protected async Task<Wallet> GetWallet(string userId, string walletId)
     {
-        var isServerAdmin = User.IsInRole(Roles.ServerAdmin);
         return await WalletRepository.GetWallet(new WalletsQuery
         {
             UserId = new[] { UserId },
             WalletId = new[] { walletId },
             IncludeTransactions = true,
-            IsServerAdmin = isServerAdmin,
-            IncludeSoftDeleted = isServerAdmin
+            IsServerAdmin = IsServerAdmin,
+            IncludeSoftDeleted = IsServerAdmin
         });
     }
 }

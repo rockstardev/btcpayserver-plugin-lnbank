@@ -45,6 +45,9 @@ public class WithdrawConfigRepository
         if (query.IncludeBoltCard)
             queryable = queryable.Include(t => t.BoltCard).AsNoTracking();
 
+        if (query.IncludeSoftDeleted && query.IsServerAdmin)
+            queryable = queryable.IgnoreQueryFilters();
+
         return queryable;
     }
 
@@ -129,6 +132,18 @@ public class WithdrawConfigRepository
         boltCard.Status = BoltCardStatus.PendingActivation;
         boltCard.CardIdentifier = null;
         boltCard.Counter = -1;
+        dbContext.Update(boltCard);
+        return await dbContext.SaveChangesAsync() > 0;
+    }
+
+    public async Task<bool> MarkBoltCardInactive(string boltCardId)
+    {
+        await using var dbContext = _dbContextFactory.CreateContext();
+        var boltCard = await dbContext.BoltCards.FindAsync(boltCardId);
+        if (boltCard == null) return false;
+
+        boltCard.Status = BoltCardStatus.Inactive;
+        dbContext.Update(boltCard);
         return await dbContext.SaveChangesAsync() > 0;
     }
 }

@@ -7,4 +7,6 @@ public class WithdrawConfigsQuery
     public bool IncludeWallet { get; set; }
     public bool IncludeTransactions { get; set; }
     public bool IncludeBoltCard { get; set; }
+    public bool IncludeSoftDeleted { get; set; }
+    public bool IsServerAdmin { get; set; }
 }

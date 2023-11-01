@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BTCPayServer.Client;
@@ -29,6 +30,7 @@ public class WalletService
     private readonly IHubContext<TransactionHub> _transactionHub;
     private readonly WalletRepository _walletRepository;
     private readonly WithdrawConfigService _withdrawConfigService;
+    private readonly WithdrawConfigRepository _withdrawConfigRepository;
 
     public WalletService(
         BTCPayService btcpayService,
@@ -36,6 +38,7 @@ public class WalletService
         IHubContext<TransactionHub> transactionHub,
         BTCPayNetworkProvider btcPayNetworkProvider,
         WithdrawConfigService withdrawConfigService,
+        WithdrawConfigRepository withdrawConfigRepository,
         WalletRepository walletRepository,
         LNURLService lnurlService)
     {
@@ -45,10 +48,21 @@ public class WalletService
         _walletRepository = walletRepository;
         _lnurlService = lnurlService;
         _withdrawConfigService = withdrawConfigService;
+        _withdrawConfigRepository = withdrawConfigRepository;
         _network = btcPayNetworkProvider.GetNetwork<BTCPayNetwork>(BTCPayService.CryptoCode).NBitcoinNetwork;
     }
 
     public async Task<bool> HasBalance(Wallet wallet) => await GetBalance(wallet) >= LightMoney.Satoshis(1);
+
+    public async Task<bool> HasActiveBoltCard(Wallet wallet)
+    {
+        var withdrawConfigs = await _withdrawConfigRepository.GetWithdrawConfigs(new WithdrawConfigsQuery
+        {
+            WalletId = wallet.WalletId,
+            IncludeBoltCard = true
+        });
+        return withdrawConfigs.Any(wc => wc.BoltCard is { Status: BoltCardStatus.Active });
+    }
 
     public async Task<LightMoney> GetBalance(Wallet wallet)
     {

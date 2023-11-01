@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Net.Mime;
 using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Constants;
 using BTCPayServer.Data;
@@ -102,21 +103,30 @@ public class WithdrawConfigsModel : BasePageModel
         var withdrawConfig = await _withdrawConfigRepository.GetWithdrawConfig(new WithdrawConfigsQuery
         {
             WalletId = walletId,
-            WithdrawConfigId = withdrawConfigId
+            WithdrawConfigId = withdrawConfigId,
+            IncludeBoltCard = true
         });
         if (withdrawConfig == null)
             return NotFound();
 
-        try
+        var hasBoltCard = await WalletService.HasActiveBoltCard(CurrentWallet);
+        if (hasBoltCard && !IsServerAdmin)
         {
-            await _withdrawConfigRepository.RemoveWithdrawConfig(withdrawConfig);
-
-            TempData[WellKnownTempData.SuccessMessage] = "Withdraw configuration removed successfully.";
-            return RedirectToPage("./WithdrawConfigs", new { walletId });
+            TempData[WellKnownTempData.ErrorMessage] = "This withdraw config still has a Bolt Card associated with it. Make sure to backup the wipe keys for any associated Bolt Card!";
         }
-        catch (Exception)
+        else
         {
-            TempData[WellKnownTempData.ErrorMessage] = "Failed to remove withdraw configuration.";
+            try
+            {
+                await _withdrawConfigRepository.RemoveWithdrawConfig(withdrawConfig);
+
+                TempData[WellKnownTempData.SuccessMessage] = "Withdraw configuration removed successfully.";
+                return RedirectToPage("./WithdrawConfigs", new { walletId });
+            }
+            catch (Exception)
+            {
+                TempData[WellKnownTempData.ErrorMessage] = "Failed to remove withdraw configuration.";
+            }
         }
 
         WithdrawConfigs = await GetWithdrawConfigs();
@@ -145,7 +155,7 @@ public class WithdrawConfigsModel : BasePageModel
         }
         catch (Exception)
         {
-            TempData[WellKnownTempData.ErrorMessage] = "Failed to issue bolt card.";
+            TempData[WellKnownTempData.ErrorMessage] = "Failed to issue Bolt Card.";
         }
 
         WithdrawConfigs = await GetWithdrawConfigs();
@@ -166,13 +176,85 @@ public class WithdrawConfigsModel : BasePageModel
         if (withdrawConfig == null)
             return NotFound();
 
-        if (await _boltCardService.MarkForReactivation(withdrawConfig.BoltCard.BoltCardId))
+        var boltCard = withdrawConfig.BoltCard;
+        if (boltCard == null)
+            return NotFound();
+
+        if (await _boltCardService.MarkForReactivation(boltCard.BoltCardId))
         {
             TempData[WellKnownTempData.SuccessMessage] = "Card reactivation started, scan the QR code for activation.";
             return RedirectToPage("./WithdrawConfigs", new { walletId, withdrawConfigId });
         }
 
-        TempData[WellKnownTempData.ErrorMessage] = "Failed to reactivate bolt card.";
+        TempData[WellKnownTempData.ErrorMessage] = "Failed to reactivate Bolt Card.";
+        WithdrawConfigs = await GetWithdrawConfigs();
+        return Page();
+    }
+
+    public async Task<IActionResult> OnGetDeactivateBoltAsync(string walletId, string withdrawConfigId)
+    {
+        if (CurrentWallet == null)
+            return NotFound();
+
+        var withdrawConfig = await _withdrawConfigRepository.GetWithdrawConfig(new WithdrawConfigsQuery
+        {
+            WalletId = walletId,
+            WithdrawConfigId = withdrawConfigId,
+            IncludeBoltCard = true
+        });
+        if (withdrawConfig == null)
+            return NotFound();
+
+        var boltCard = withdrawConfig.BoltCard;
+        if (boltCard == null)
+            return NotFound();
+
+        if (await _boltCardService.MarkInactive(boltCard.BoltCardId))
+        {
+            TempData[WellKnownTempData.SuccessMessage] = "Card marked as inactive. Wipe it or download the wipe keys and keep them safe!";
+            return RedirectToPage("./WithdrawConfigs", new { walletId, withdrawConfigId });
+        }
+
+        TempData[WellKnownTempData.ErrorMessage] = "Failed to deactivate Bolt Card.";
+        WithdrawConfigs = await GetWithdrawConfigs();
+        return Page();
+    }
+
+    public async Task<IActionResult> OnGetDownloadWipeKeysAsync(string walletId, string withdrawConfigId)
+    {
+        if (CurrentWallet == null)
+            return NotFound();
+
+        var withdrawConfig = await _withdrawConfigRepository.GetWithdrawConfig(new WithdrawConfigsQuery
+        {
+            WalletId = walletId,
+            WithdrawConfigId = withdrawConfigId,
+            IncludeBoltCard = true
+        });
+        if (withdrawConfig == null)
+            return NotFound();
+
+        var boltCard = withdrawConfig.BoltCard;
+        if (boltCard == null)
+            return NotFound();
+        if (boltCard.Status != BoltCardStatus.Active || !boltCard.Index.HasValue)
+            return BadRequest();
+
+        var wipeContent = await _boltCardService.GetWipeContent(boltCard.Index.Value);
+        if (!string.IsNullOrEmpty(wipeContent))
+        {
+            var cd = new ContentDisposition
+            {
+                FileName = $"lnbank-bolt-card-wipe-keys-{boltCard.BoltCardId}.json",
+                Inline = false
+            };
+            Response.Headers.Add("Content-Disposition", cd.ToString());
+            Response.Headers.Add("X-Content-Type-Options", "nosniff");
+
+            return Content(wipeContent, "application/json");
+        }
+
+        TempData[WellKnownTempData.ErrorMessage] = "Failed to get wipe keys for Bolt Card.";
         WithdrawConfigs = await GetWithdrawConfigs();
         return Page();
     }
@@ -183,7 +265,9 @@ public class WithdrawConfigsModel : BasePageModel
         {
             WalletId = CurrentWallet.WalletId,
             IncludeTransactions = true,
-            IncludeBoltCard = true
+            IncludeBoltCard = true,
+            IncludeSoftDeleted = IsServerAdmin,
+            IsServerAdmin = IsServerAdmin
         });
     }
 }

@@ -19,4 +19,6 @@ public class TransactionsQuery
     public bool IncludingCancelled { get; set; }
     public bool IncludingInvalid { get; set; }
     public bool IncludingRevalidating { get; set; }
+    public bool IncludeSoftDeleted { get; set; }
+    public bool IsServerAdmin { get; set; }
 }

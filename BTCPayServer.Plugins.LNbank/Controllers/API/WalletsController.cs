@@ -122,9 +122,14 @@ public class WalletsController : ControllerBase
         if (wallet == null)
             return this.CreateAPIError(404, "wallet-not-found", "The wallet was not found");
 
-        if (await _walletService.HasBalance(wallet) && !User.IsInRole(Roles.ServerAdmin))
+        var hasBalance = await _walletService.HasBalance(wallet);
+        var hasBoltCard = await _walletService.HasActiveBoltCard(wallet);
+
+        if ((hasBalance || hasBoltCard) && !User.IsInRole(Roles.ServerAdmin))
         {
-            return this.CreateAPIError("wallet-not-empty", "This wallet still has a balance.");
+            return this.CreateAPIError("wallet-not-empty", hasBalance
+                ? "This wallet still has a balance."
+                : "This wallet still has a withdraw config and Bolt Card associated with it. Make sure to backup the wipe keys for any associated Bolt Card!");
         }
 
         await _walletRepository.RemoveWallet(wallet);

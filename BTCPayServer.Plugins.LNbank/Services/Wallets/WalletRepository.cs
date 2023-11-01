@@ -338,6 +338,9 @@ public class WalletRepository
         if (!query.IncludingExpired)
             queryable = queryable.Where(t => t.ExplicitStatus != Transaction.StatusExpired);
 
+        if (query.IncludeSoftDeleted && query.IsServerAdmin)
+            queryable = queryable.IgnoreQueryFilters();
+
         queryable = query.Type switch
         {
             TransactionType.Invoice => queryable.Where(t => t.InvoiceId != null),

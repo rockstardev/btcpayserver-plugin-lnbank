@@ -142,6 +142,11 @@ public class BoltCardService : EventHostedServiceBase
         return await _withdrawConfigRepository.MarkBoltCardForReactivation(boltCardId);
     }
 
+    public async Task<bool> MarkInactive(string boltCardId)
+    {
+        return await _withdrawConfigRepository.MarkBoltCardInactive(boltCardId);
+    }
+
     public async Task<string> CreateCard(string withdrawConfigId)
     {
         var withdrawConfig = await _withdrawConfigRepository.GetWithdrawConfig(new WithdrawConfigsQuery
