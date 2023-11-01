@@ -8,7 +8,13 @@
 <div class="sticky-header-setup"></div>
 <div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-3">
     <a asp-page="/Wallets/Wallet" asp-route-walletId="@Model.WalletId" class="unobtrusive-link" id="LNbank-WalletOverview">
-        <h2 class="my-1" id="LNbank-WalletName">@Model.Name</h2>
+        <h2 class="my-1" id="LNbank-WalletName">
+            @Model.Name
+            @if (Model.IsSoftDeleted)
+            {
+                <span class="text-danger">(Deleted)</span>
+            }
+        </h2>
         <div class="text-muted fw-semibold" id="LNbank-WalletBalance" title="@Helpers.Millisats(balance)" data-sensitive>
             @Helpers.Sats(balance)
         </div>

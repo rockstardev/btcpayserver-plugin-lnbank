@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.8.1]
 
+### Added
+
+- Allow admin to access soft deleted wallets.
+
 ### Fixed
 
 - Bolt Card: Await creation of withdraw request. (btcpayserver/btcpayserver#5440)

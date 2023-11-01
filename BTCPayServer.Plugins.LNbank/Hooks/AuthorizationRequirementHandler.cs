@@ -42,7 +42,8 @@ public class AuthorizationRequirementHandler : IPluginHookFilter
                 UserId = new[] { userId },
                 WalletId = new[] { walletId },
                 IncludeTransactions = true,
-                IsServerAdmin = isServerAdmin
+                IsServerAdmin = isServerAdmin,
+                IncludeSoftDeleted = isServerAdmin
             });
         }
 

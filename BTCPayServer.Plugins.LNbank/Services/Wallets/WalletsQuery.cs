@@ -12,6 +12,7 @@ public class WalletsQuery
     public bool IncludeTransactions { get; set; }
     public bool IncludeAccessKeys { get; set; }
     public bool IncludeUser { get; set; }
+    public bool IncludeSoftDeleted { get; set; }
     public bool IsServerAdmin { get; set; }
 
     public bool HasAdminAccess(Wallet wallet)

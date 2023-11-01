@@ -44,7 +44,9 @@ public class IndexModel : BasePageModel
         var walletsByUserId = (await WalletRepository.GetWallets(new WalletsQuery
             {
                 IncludeTransactions = true,
-                IncludeUser = true
+                IncludeUser = true,
+                IncludeSoftDeleted = true,
+                IsServerAdmin = User.IsInRole(Roles.ServerAdmin)
             }))
             .GroupBy(w => w.UserId)
             .ToDictionary(g => g.Key, g => g.AsEnumerable());

@@ -77,6 +77,9 @@ public class WalletRepository
         if (query.IncludeAccessKeys)
             queryable = queryable.Include(w => w.AccessKeys).AsNoTracking();
 
+        if (query.IncludeSoftDeleted && query.IsServerAdmin)
+            queryable = queryable.IgnoreQueryFilters();
+
         return queryable;
     }
 
@@ -158,10 +161,19 @@ public class WalletRepository
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task RemoveWallet(Wallet wallet)
+    public async Task RemoveWallet(Wallet wallet, bool forceDelete = false)
     {
-        wallet.IsSoftDeleted = true;
-        await AddOrUpdateWallet(wallet);
+        await using var dbContext = _dbContextFactory.CreateContext();
+        if (forceDelete)
+        {
+            dbContext.Wallets.Remove(wallet);
+        }
+        else
+        {
+            wallet.IsSoftDeleted = true;
+            dbContext.Update(wallet);
+        }
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task<IEnumerable<Transaction>> GetPendingTransactions()
@@ -276,19 +288,19 @@ public class WalletRepository
 
     public async Task RemoveTransaction(Transaction transaction, bool forceDelete = false)
     {
+        await using var dbContext = _dbContextFactory.CreateContext();
         if (forceDelete)
         {
-            await using var dbContext = _dbContextFactory.CreateContext();
             dbContext.Transactions.Remove(transaction);
-            await dbContext.SaveChangesAsync();
-
-            InvalidateBalanceCache(transaction.WalletId);
         }
         else
         {
             transaction.IsSoftDeleted = true;
-            await UpdateTransaction(transaction);
+            dbContext.Update(transaction);
         }
+        await dbContext.SaveChangesAsync();
+
+        InvalidateBalanceCache(transaction.WalletId);
     }
 
     public async Task<IEnumerable<Transaction>> GetTransactions(TransactionsQuery query)

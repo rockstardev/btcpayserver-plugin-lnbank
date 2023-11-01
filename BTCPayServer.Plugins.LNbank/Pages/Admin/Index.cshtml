@@ -48,7 +48,13 @@
                 <div class="col">
                     <div class="card">
                         <a asp-page="/Wallets/Wallet" asp-route-walletId="@wallet.WalletId" class="card-body text-decoration-none">
-                            <h5 class="card-title">@wallet.Name</h5>
+                            <h5 class="card-title">
+                                @wallet.Name
+                                @if (wallet.IsSoftDeleted)
+                                {
+                                    <span class="text-danger">(Deleted)</span>
+                                }
+                            </h5>
                             <div class="card-text d-flex flex-wrap align-items-center justify-content-between gap-2">
                                 <span class="badge bg-light fs-6">
                                     <span class="data-sensitive">@Helpers.Sats(await WalletService.GetBalance(wallet))</span>

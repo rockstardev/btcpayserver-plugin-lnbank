@@ -57,12 +57,18 @@ public class WithdrawConfigRepository
         return withdrawConfig;
     }
 
-    public async Task RemoveWithdrawConfig(WithdrawConfig withdrawConfig)
+    public async Task RemoveWithdrawConfig(WithdrawConfig withdrawConfig, bool forceDelete = false)
     {
-        withdrawConfig.IsSoftDeleted = true;
-
         await using var dbContext = _dbContextFactory.CreateContext();
-        dbContext.Update(withdrawConfig);
+        if (forceDelete)
+        {
+            dbContext.WithdrawConfigs.Remove(withdrawConfig);
+        }
+        else
+        {
+            withdrawConfig.IsSoftDeleted = true;
+            dbContext.Update(withdrawConfig);
+        }
         await dbContext.SaveChangesAsync();
     }
 

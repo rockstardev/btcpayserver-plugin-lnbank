@@ -89,44 +89,47 @@
     </div>
 </div>
 
-@if (!string.IsNullOrEmpty(lndhubUrl))
+@if (!Model.CurrentWallet.IsSoftDeleted)
 {
-    <h3 class="mt-5 mb-3">Connect LNDhub-compatible wallet</h3>
-    <p>
-        With the QR code/account URL below, you can connect any wallet that is compatible with the LNDhub protocol.
-        This is supported by <a href="https://bluewallet.io/" target="_blank" rel="noreferrer noopener">BlueWallet</a>,
-        <a href="https://zeusln.app/" target="_blank" rel="noreferrer noopener">Zeus</a> and
-        <a href="https://getalby.com/" target="_blank" rel="noreferrer noopener">Alby</a>.
-    </p>
-    <p>These credentials allow unrestricted access to your LNbank wallet. Treat it as confidential information.</p>
+    @if (!string.IsNullOrEmpty(lndhubUrl))
+    {
+        <h3 class="mt-5 mb-3">Connect LNDhub-compatible wallet</h3>
+        <p>
+            With the QR code/account URL below, you can connect any wallet that is compatible with the LNDhub protocol.
+            This is supported by <a href="https://bluewallet.io/" target="_blank" rel="noreferrer noopener">BlueWallet</a>,
+            <a href="https://zeusln.app/" target="_blank" rel="noreferrer noopener">Zeus</a> and
+            <a href="https://getalby.com/" target="_blank" rel="noreferrer noopener">Alby</a>.
+        </p>
+        <p>These credentials allow unrestricted access to your LNbank wallet. Treat it as confidential information.</p>
 
-    <div id="LNbank-LNDhubQR" class="collapse">
-        <div class="payment-box mx-0">
-            <div class="qr-container" data-clipboard="@lndhubUrl" id="LNbank-QRContainer">
-                @await Component.InvokeAsync("QRCode", new { data = lndhubUrl })
-            </div>
-            <div class="input-group mt-3">
-                <div class="form-floating">
-                    <input id="LNbank-AccessUrl" class="form-control-plaintext" readonly="readonly" value="@lndhubUrl">
-                    <label for="LNbank-AccessUrl">Access URL</label>
+        <div id="LNbank-LNDhubQR" class="collapse">
+            <div class="payment-box mx-0">
+                <div class="qr-container" data-clipboard="@lndhubUrl" id="LNbank-QRContainer">
+                    @await Component.InvokeAsync("QRCode", new { data = lndhubUrl })
                 </div>
-                <button type="button" class="btn btn-link" data-clipboard-target="#LNbank-AccessUrl">
-                    @await Component.InvokeAsync("Icon", new { symbol = "copy" })
-                </button>
+                <div class="input-group mt-3">
+                    <div class="form-floating">
+                        <input id="LNbank-AccessUrl" class="form-control-plaintext" readonly="readonly" value="@lndhubUrl">
+                        <label for="LNbank-AccessUrl">Access URL</label>
+                    </div>
+                    <button type="button" class="btn btn-link" data-clipboard-target="#LNbank-AccessUrl">
+                        @await Component.InvokeAsync("Icon", new { symbol = "copy" })
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="mt-4">
-        <button class="d-flex align-items-center gap-1 btn btn-link px-0" type="button" id="LNbank-ToggleLNDhubQR" data-bs-toggle="collapse" data-bs-target="#LNbank-LNDhubQR" aria-expanded="false" aria-controls="LNbank-LNDhubQR">
-            <span class="fw-semibold">Show QR code</span>
-            @await Component.InvokeAsync("Icon", new { symbol = "caret-down" })
-        </button>
-    </div>
+        <div class="mt-4">
+            <button class="d-flex align-items-center gap-1 btn btn-link px-0" type="button" id="LNbank-ToggleLNDhubQR" data-bs-toggle="collapse" data-bs-target="#LNbank-LNDhubQR" aria-expanded="false" aria-controls="LNbank-LNDhubQR">
+                <span class="fw-semibold">Show QR code</span>
+                @await Component.InvokeAsync("Icon", new { symbol = "caret-down" })
+            </button>
+        </div>
+    }
+
+    <h3 class="mt-5 mb-4">Other options</h3>
+
+    <a asp-page="./Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" class="btn btn-outline-danger">
+        Delete Wallet
+    </a>
 }
-
-<h3 class="mt-5 mb-4">Other options</h3>
-
-<a asp-page="./Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" class="btn btn-outline-danger">
-    Delete Wallet
-</a>
