@@ -39,7 +39,8 @@ public class BoltCardController : ControllerBase
         try
         {
             var result = await _boltCardService.VerifyTap(url, group, cancellationToken);
-            return Ok(GetWithdrawRequest(result.boltCard.WithdrawConfig, result.authorizationCode));
+            var withdrawRequest = await GetWithdrawRequest(result.boltCard.WithdrawConfig, result.authorizationCode);
+            return Ok(withdrawRequest);
         }
         catch (Exception exception)
         {
@@ -126,7 +127,7 @@ public class BoltCardController : ControllerBase
     {
         var remaining = await _withdrawConfigService.GetRemainingBalance(withdrawConfig);
         var oneSat = LightMoney.Satoshis(1);
-        var request = new LNURLWithdrawRequest
+        return new LNURLWithdrawRequest
         {
             Tag = LNURLService.WithdrawRequestTag,
             K1 = authorizationCode,
@@ -136,6 +137,5 @@ public class BoltCardController : ControllerBase
             CurrentBalance = remaining,
             Callback = new Uri(Url.Action("BoltCardPayCallback", "BoltCard", null, Request.Scheme))
         };
-        return request;
     }
 }
