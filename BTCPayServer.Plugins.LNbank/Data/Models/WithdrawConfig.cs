@@ -73,6 +73,12 @@ public class WithdrawConfig
             .WithOne(w => w.WithdrawConfig)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder
+            .Entity<WithdrawConfig>()
+            .HasOne(w => w.Wallet)
+            .WithMany(w => w.WithdrawConfigs)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.Entity<WithdrawConfig>()
             .Property(w => w.ReuseType)
             .HasConversion<string>();
