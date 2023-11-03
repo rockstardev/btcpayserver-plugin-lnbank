@@ -36,7 +36,9 @@ public class BoltCards : BasePageModel
         PendingCards = await _withdrawConfigRepository.GetBoltCards(new BoltCardsQuery
         {
             Status = BoltCardStatus.PendingActivation,
-            IncludeWithdrawConfig = true
+            IncludeWithdrawConfig = true,
+            IsServerAdmin = IsServerAdmin,
+            IncludeSoftDeleted = IsServerAdmin
         });
 
         return Page();

@@ -8,5 +8,7 @@ public class BoltCardsQuery
     public string WithdrawConfigId { get; set; }
     public bool IncludeWithdrawConfig { get; set; }
     public bool IncludeTransactions { get; set; }
+    public bool IncludeSoftDeleted { get; set; }
+    public bool IsServerAdmin { get; set; }
     public BoltCardStatus? Status { get; set; }
 }

@@ -120,6 +120,9 @@ public class WithdrawConfigRepository
         if (query.IncludeTransactions)
             queryable = queryable.Include(b => b.WithdrawConfig.Wallet).AsNoTracking();
 
+        if (query.IncludeSoftDeleted && query.IsServerAdmin)
+            queryable = queryable.IgnoreQueryFilters();
+
         return queryable;
     }
 
