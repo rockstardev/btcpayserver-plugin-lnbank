@@ -10,8 +10,14 @@ namespace BTCPayServer.Plugins.LNbank.Data.Models;
 public class Transaction
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+
+    [DisplayName("Transaction ID")]
     public string TransactionId { get; set; }
+
+    [DisplayName("Invoice ID")]
     public string InvoiceId { get; set; }
+
+    [DisplayName("Wallet ID")]
     public string WalletId { get; set; }
 
     [DisplayName("Withdraw configuration")]
