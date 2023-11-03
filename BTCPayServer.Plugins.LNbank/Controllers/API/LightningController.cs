@@ -231,11 +231,19 @@ public class LightningController : ControllerBase
     {
         try
         {
-            var payment = await _btcpayService.GetLightningPayment(paymentHash);
-            if (payment == null)
-                return this.CreateAPIError(404, "payment-not-found", "The payment was not found");
+            var transaction = await _walletRepository.GetTransaction(new TransactionQuery
+            {
+                UserId = UserId,
+                WalletId = WalletId,
+                PaymentHash = paymentHash
+            });
+            var payment = transaction != null
+                ? ToLightningPaymentData(transaction)
+                : await _btcpayService.GetLightningPayment(paymentHash);
 
-            return Ok(payment);
+            return payment != null
+                ? Ok(payment)
+                : this.CreateAPIError(404, "payment-not-found", "The payment was not found");
         }
         catch (Exception exception)
         {

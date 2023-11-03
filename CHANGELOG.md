@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Bolt Card: Fix lookup for admin. (#45)
+- API: Fix missing internal payment lookup.
 
 ## [1.8.1]
 
