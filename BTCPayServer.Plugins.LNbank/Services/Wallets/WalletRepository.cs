@@ -355,7 +355,7 @@ public class WalletRepository
     {
         await using var dbContext = _dbContextFactory.CreateContext();
         return await dbContext.Transactions.AsQueryable()
-            .Where(t => t.AmountSettled != null)
+            .Where(t => t.AmountSettled != null && t.IsSoftDeleted == false)
             .SumAsync(t => t.AmountSettled);
     }
 
@@ -376,7 +376,7 @@ public class WalletRepository
     public LightMoney GetBalance(IEnumerable<Transaction> transactions)
     {
         return transactions
-            .Where(t => t.AmountSettled != null)
+            .Where(t => t.AmountSettled != null && t.IsSoftDeleted == false)
             .Sum(t => t.AmountSettled - (t.HasRoutingFee ? t.RoutingFee : LightMoney.Zero));
     }
 

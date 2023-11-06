@@ -44,7 +44,7 @@ public class WithdrawConfigService
     private static LightMoney GetSpentAmount(IEnumerable<Transaction> transactions)
     {
         return Math.Abs(transactions
-            .Where(t => t.AmountSettled != null)
+            .Where(t => t.AmountSettled != null && t.IsSoftDeleted == false)
             .Sum(t => t.AmountSettled - (t.HasRoutingFee ? t.RoutingFee : LightMoney.Zero)));
     }
 
