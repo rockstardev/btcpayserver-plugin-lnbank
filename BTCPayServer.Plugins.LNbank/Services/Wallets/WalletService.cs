@@ -251,30 +251,26 @@ public class WalletService
             var result = await _btcpayService.PayLightningInvoice(request, cancellationToken);
 
             // Check result
+            if (result == null)
+                throw new NoPaymentResultException("Payment result could not be determined.");
             if (result.TotalAmount == null)
                 throw new PaymentRequestValidationException("Payment request has already been paid.");
 
             // Set amounts according to actual amounts paid, including fees
-            LightMoney settledAmount = new (result.TotalAmount * -1);
+            var settledAmount = new LightMoney(result.TotalAmount * -1);
             var originalAmount = result.TotalAmount - result.FeeAmount;
 
             await Settle(sendingEntry, originalAmount, settledAmount, result.FeeAmount, DateTimeOffset.UtcNow, result.Preimage);
         }
-        catch (GreenfieldAPIException ex)
+        catch (GreenfieldAPIException ex) when (ex.APIError.Code is "could-not-find-route" or "generic-error")
         {
-            switch (ex.APIError.Code)
-            {
-                case "could-not-find-route":
-                case "generic-error":
-                    // Remove preliminary transaction entry, payment could not be sent
-                    await _walletRepository.RemoveTransaction(sendingTransaction, true);
-                    break;
-            }
+            // Remove preliminary transaction entry, payment could not be sent
+            await _walletRepository.RemoveTransaction(sendingTransaction, true);
 
             // Rethrow to inform about the error up in the stack
             throw;
         }
-        catch (Exception ex) when (ex is TaskCanceledException or OperationCanceledException)
+        catch (Exception ex) when (ex is TaskCanceledException or OperationCanceledException or NoPaymentResultException)
         {
             // Timeout, potentially caused by hold invoices
             // Payment will be saved as pending, the LightningInvoiceWatcher will handle settling/cancelling
