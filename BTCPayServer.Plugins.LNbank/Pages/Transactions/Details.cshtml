@@ -12,7 +12,13 @@
 <partial name="_WalletHeader" model="Model.CurrentWallet"/>
 <partial name="_StatusMessage"/>
 
-<h2 id="LNbank-TransactionTitle">@ViewData["Title"]</h2>
+<h2 id="LNbank-TransactionTitle">
+    @ViewData["Title"]
+    @if (Model.Transaction.IsSoftDeleted)
+    {
+        <span class="text-danger">(Deleted)</span>
+    }
+</h2>
 @if (Model.Transaction.IsPaid || Model.Transaction.IsSettled)
 {
     <h3 id="LNbank-TransactionSettled" class="text-@(Model.Transaction.AmountSettled > 0 ? "success" : "danger")">
@@ -167,19 +173,25 @@ else
     }
 </dl>
 
-<div permission="@LNbankPolicies.CanManageLNbank">
-    <h3 class="mt-5 mb-4">Other options</h3>
-    <div class="d-flex flex-wrap gap-3 align-items-center">
-        @if (Model.Transaction.CanRevalidate)
-        {
-            <a asp-page="./Revalidate" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-title="Revalidate transaction" data-description="This will revalidate this transaction." data-confirm="Revalidate" data-confirm-input="REVALIDATE" class="btn btn-outline-info">
-                Revalidate Transaction
-            </a>
-        }
-        <a asp-page="./Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-title="Delete transaction" data-description="This will delete this transaction." data-confirm="Delete" data-confirm-input="DELETE" class="btn btn-outline-danger">
-            Delete Transaction
-        </a>
+@if (Model.Transaction.CanRevalidate || !Model.Transaction.IsSoftDeleted)
+{
+    <div permission="@LNbankPolicies.CanManageLNbank">
+        <h3 class="mt-5 mb-4">Other options</h3>
+        <div class="d-flex flex-wrap gap-3 align-items-center">
+            @if (Model.Transaction.CanRevalidate)
+            {
+                <a asp-page="./Revalidate" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-title="Revalidate transaction" data-description="This will revalidate this transaction." data-confirm="Revalidate" data-confirm-input="REVALIDATE" class="btn btn-outline-info">
+                    Revalidate Transaction
+                </a>
+            }
+            @if (!Model.Transaction.IsSoftDeleted)
+            {
+                <a asp-page="./Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@Model.Transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-title="Delete transaction" data-description="This will delete this transaction." data-confirm="Delete" data-confirm-input="DELETE" class="btn btn-outline-danger">
+                    Delete Transaction
+                </a>
+            }
+        </div>
     </div>
-</div>
 
-<partial name="_Confirm" model="@(new ConfirmModel("Delete transaction", "This will delete this transaction. Are you sure?", "Delete"))" />
+    <partial name="_Confirm" model="@(new ConfirmModel("Delete transaction", "This will delete this transaction. Are you sure?", "Delete"))"/>
+}

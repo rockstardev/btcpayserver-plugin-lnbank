@@ -174,7 +174,14 @@ else if (Model.HistogramData != null)
                             @if (transaction.IsPaid || transaction.IsSettled || transaction.IsPending)
                             {
                                 <span class="text-@Helpers.TransactionStateClass(transaction) transaction-@(transaction.Status.ToLower())" data-sensitive data-amount-settled="@transaction.AmountSettled.ToUnit(LightMoneyUnit.MilliSatoshi)" data-transaction-fee="@transaction.RoutingFee?.ToUnit(LightMoneyUnit.MilliSatoshi)" data-bs-toggle="tooltip" data-bs-placement="left" title="@Tooltip(transaction)">
-                                    @Helpers.Sats(transaction.AmountSettled)
+                                    @if (transaction.IsSoftDeleted)
+                                    {
+                                        <del>@Helpers.Sats(transaction.AmountSettled)</del>
+                                    }
+                                    else
+                                    {
+                                        @Helpers.Sats(transaction.AmountSettled)
+                                    }
                                 </span>
                                 @if (transaction.IsPending)
                                 {
@@ -198,9 +205,16 @@ else if (Model.HistogramData != null)
                                 </a>
                                 <span>-</span>
                             }
-                            <a asp-page="/Transactions/Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-title="Delete transaction" data-description="This will delete this transaction." data-confirm="Delete" data-confirm-input="DELETE" class="transaction-delete text-danger">
-                                Delete
-                            </a>
+                            @if (transaction.IsSoftDeleted)
+                            {
+                                <span class="badge bg-danger">Deleted</span>
+                            }
+                            else
+                            {
+                                <a asp-page="/Transactions/Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@transaction.TransactionId" data-bs-toggle="modal" data-bs-target="#ConfirmModal" data-title="Delete transaction" data-description="This will delete this transaction." data-confirm="Delete" data-confirm-input="DELETE" class="transaction-delete text-danger">
+                                    Delete
+                                </a>
+                            }
                         </td>
                     </tr>
                 }
