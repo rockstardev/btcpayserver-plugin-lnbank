@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BTCPayServer.Lightning;
-using BTCPayServer.Plugins.LNbank.Data;
 using BTCPayServer.Plugins.LNbank.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -112,7 +111,7 @@ public class WalletRepository
 
     public async Task<Wallet> AddOrUpdateWallet(Wallet wallet)
     {
-        await using LNbankPluginDbContext dbContext = _dbContextFactory.CreateContext();
+        await using var dbContext = _dbContextFactory.CreateContext();
 
         EntityEntry entry;
         if (string.IsNullOrEmpty(wallet.WalletId))
@@ -224,6 +223,9 @@ public class WalletRepository
 
         if (query.PaymentHash != null)
             queryable = queryable.Where(t => t.PaymentHash == query.PaymentHash);
+
+        if (query.IncludeSoftDeleted && query.IsServerAdmin)
+            queryable = queryable.IgnoreQueryFilters();
 
         return queryable.FirstOrDefault();
     }

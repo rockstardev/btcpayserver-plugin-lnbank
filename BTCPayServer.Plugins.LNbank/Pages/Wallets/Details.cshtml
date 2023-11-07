@@ -1,6 +1,7 @@
 @page "/plugins/lnbank/wallets/{walletId}/details"
 @using BTCPayServer.Plugins.LNbank.Data.Models
 @using BTCPayServer.Plugins.LNbank.Services.Wallets
+@using BTCPayServer.Plugins.LNbank.Authentication
 @inject WalletService WalletService
 @model BTCPayServer.Plugins.LNbank.Pages.Wallets.DetailsModel
 @{
@@ -126,10 +127,34 @@
             </button>
         </div>
     }
+}
 
+<div permission="@LNbankPolicies.CanManageLNbank">
     <h3 class="mt-5 mb-4">Other options</h3>
+    <div class="d-flex flex-wrap gap-3 align-items-center">
+        @if (Model.CurrentWallet.IsSoftDeleted)
+        {
+            <form method="post" asp-controller="Admin" asp-action="RestoreWallet" asp-route-walletId="@Model.CurrentWallet.WalletId">
+                <input type="submit" value="Restore wallet" class="btn btn-outline-danger" id="LNbank-RestoreWallet"/>
+            </form>
+        }
+        else
+        {
+            <a asp-page="./Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" class="btn btn-outline-danger">
+                Delete Wallet
+            </a>
+        }
+    </div>
+</div>
 
-    <a asp-page="./Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" class="btn btn-outline-danger">
-        Delete Wallet
-    </a>
+@if (!Model.CurrentWallet.IsSoftDeleted)
+{
+    <div not-permission="@LNbankPolicies.CanManageLNbank">
+        <h3 class="mt-5 mb-4">Other options</h3>
+        <div class="d-flex flex-wrap gap-3 align-items-center">
+            <a asp-page="./Delete" asp-route-walletId="@Model.CurrentWallet.WalletId" class="btn btn-outline-danger">
+                Delete Wallet
+            </a>
+        </div>
+    </div>
 }

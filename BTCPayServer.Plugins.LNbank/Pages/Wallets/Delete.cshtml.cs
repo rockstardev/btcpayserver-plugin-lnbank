@@ -22,6 +22,8 @@ public class DeleteModel : BasePageModel
     {
         if (CurrentWallet == null)
             return NotFound();
+        if (CurrentWallet.IsSoftDeleted)
+            return RedirectToPage("./Index");
 
         return Page();
     }
@@ -30,6 +32,8 @@ public class DeleteModel : BasePageModel
     {
         if (CurrentWallet == null)
             return NotFound();
+        if (CurrentWallet.IsSoftDeleted)
+            return RedirectToPage("./Index");
 
         var hasBalance = await WalletService.HasBalance(CurrentWallet);
         var hasBoltCard = await WalletService.HasActiveBoltCard(CurrentWallet);

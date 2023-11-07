@@ -31,6 +31,8 @@ public class DeleteModel : BasePageModel
         Transaction = CurrentWallet.Transactions.FirstOrDefault(t => t.TransactionId == transactionId);
         if (Transaction == null)
             return NotFound();
+        if (Transaction.IsSoftDeleted)
+            return RedirectToPage("/Wallets/Wallet", new { CurrentWallet.WalletId });
 
         return Page();
     }
@@ -43,6 +45,8 @@ public class DeleteModel : BasePageModel
         Transaction = CurrentWallet.Transactions.FirstOrDefault(t => t.TransactionId == transactionId);
         if (Transaction == null)
             return NotFound();
+        if (Transaction.IsSoftDeleted)
+            return RedirectToPage("/Wallets/Wallet", new { CurrentWallet.WalletId });
 
         try
         {

@@ -9,4 +9,6 @@ public class TransactionQuery
     public string PaymentRequest { get; set; }
     public string PaymentHash { get; set; }
     public bool HasInvoiceId { get; set; }
+    public bool IncludeSoftDeleted { get; set; }
+    public bool IsServerAdmin { get; set; }
 }
