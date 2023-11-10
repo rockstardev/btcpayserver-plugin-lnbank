@@ -13,6 +13,7 @@ using BTCPayServer.Plugins.LNbank.Data.Models;
 using BTCPayServer.Plugins.LNbank.Services;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using WalletData = BTCPayServer.Plugins.LNbank.Data.API.WalletData;
@@ -20,6 +21,7 @@ using WalletData = BTCPayServer.Plugins.LNbank.Data.API.WalletData;
 namespace BTCPayServer.Plugins.LNbank.Controllers.API;
 
 [ApiController]
+[EnableCors(CorsPolicies.All)]
 [Route("~/api/v1/lnbank/wallets")]
 public class WalletsController : ControllerBase
 {
