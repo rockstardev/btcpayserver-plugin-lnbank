@@ -5,7 +5,6 @@
 @{
     var balance = await WalletService.GetBalance(Model);
 }
-<div class="sticky-header-setup"></div>
 <div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-3">
     <a asp-page="/Wallets/Wallet" asp-route-walletId="@Model.WalletId" class="unobtrusive-link" id="LNbank-WalletOverview">
         <h2 class="my-1" id="LNbank-WalletName">
