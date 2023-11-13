@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -31,6 +32,7 @@ public class WalletService
     private readonly WalletRepository _walletRepository;
     private readonly WithdrawConfigService _withdrawConfigService;
     private readonly WithdrawConfigRepository _withdrawConfigRepository;
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _balanceSemaphores = new();
 
     public WalletService(
         BTCPayService btcpayService,
@@ -159,32 +161,42 @@ public class WalletService
         var amount = bolt11.MinimumAmount == LightMoney.Zero ? explicitAmount : bolt11.MinimumAmount;
         if (amount == null)
             throw new ArgumentException("Amount must be defined.", nameof(amount));
-        var balance = await GetBalance(wallet);
-        if (balance < amount)
-            throw new InsufficientBalanceException(
-                $"Insufficient balance: {Sats(balance)} — tried to send {Sats(amount)}.");
 
-        // check if the invoice exists already
-        var paymentRequest = bolt11.ToString();
-        var receivingTransaction = await ValidatePaymentRequest(paymentRequest);
-        var isInternal = !string.IsNullOrEmpty(receivingTransaction?.InvoiceId);
-        var sendingTransaction = new Transaction
+        var semaphore = GetBalanceSemaphore(wallet.WalletId);
+        await semaphore.WaitAsync(cancellationToken);
+        try
         {
-            WalletId = wallet.WalletId,
-            PaymentRequest = paymentRequest,
-            PaymentHash = bolt11.PaymentHash?.ToString(),
-            ExpiresAt = bolt11.ExpiryDate,
-            Description = description,
-            Amount = amount,
-            AmountSettled = new LightMoney(amount.MilliSatoshi * -1),
-            WithdrawConfigId = withdrawConfigId
-        };
+            var balance = await GetBalance(wallet);
+            if (balance < amount)
+            {
+                throw new InsufficientBalanceException($"Insufficient balance: {Sats(balance)} — tried to send {Sats(amount)}.");
+            }
 
-        var transaction = await (isInternal && receivingTransaction != null
-            ? SendInternal(sendingTransaction, receivingTransaction, cancellationToken)
-            : SendExternal(sendingTransaction, amount, balance, maxFeePercent, cancellationToken));
+            // check if the invoice exists already
+            var paymentRequest = bolt11.ToString();
+            var receivingTransaction = await ValidatePaymentRequest(paymentRequest);
+            var isInternal = !string.IsNullOrEmpty(receivingTransaction?.InvoiceId);
+            var sendingTransaction = new Transaction
+            {
+                WalletId = wallet.WalletId,
+                PaymentRequest = paymentRequest,
+                PaymentHash = bolt11.PaymentHash?.ToString(),
+                ExpiresAt = bolt11.ExpiryDate,
+                Description = description,
+                Amount = amount,
+                AmountSettled = new LightMoney(amount.MilliSatoshi * -1),
+                WithdrawConfigId = withdrawConfigId
+            };
 
-        return transaction;
+            var transaction = await (isInternal && receivingTransaction != null
+                ? SendInternal(sendingTransaction, receivingTransaction, cancellationToken)
+                : SendExternal(sendingTransaction, amount, balance, maxFeePercent, cancellationToken));
+            return transaction;
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     private async Task<Transaction> SendInternal(Transaction sendingTransaction, Transaction receivingTransaction,
@@ -459,6 +471,11 @@ public class WalletService
     {
         var total = await _walletRepository.GetLiabilitiesTotal();
         return new LightMoney(total);
+    }
+
+    public SemaphoreSlim GetBalanceSemaphore(string walletId)
+    {
+        return _balanceSemaphores.GetOrAdd(walletId, new SemaphoreSlim(1, 1));
     }
 
     private async Task BroadcastTransactionUpdate(Transaction transaction, string eventName)

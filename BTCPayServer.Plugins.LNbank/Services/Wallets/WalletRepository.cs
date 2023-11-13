@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -16,7 +15,6 @@ public class WalletRepository
 {
     private readonly LNbankPluginDbContextFactory _dbContextFactory;
     private readonly IMemoryCache _memoryCache;
-    private readonly ConcurrentDictionary<string, SemaphoreSlim> _balanceSemaphores = new();
 
     public WalletRepository(
         LNbankPluginDbContextFactory dbContextFactory,
@@ -361,18 +359,15 @@ public class WalletRepository
             .SumAsync(t => t.AmountSettled);
     }
 
-    public async Task<LightMoney> GetBalance(Wallet wallet, CancellationToken cancellationToken = default)
+    public Task<LightMoney> GetBalance(Wallet wallet, CancellationToken cancellationToken = default)
     {
         var id = wallet.WalletId;
         if (!_memoryCache.TryGetValue<LightMoney>(GetBalanceCacheKey(id), out var balance))
         {
-            var semaphore = _balanceSemaphores.GetOrAdd(id, new SemaphoreSlim(1, 1));
-            await semaphore.WaitAsync(cancellationToken);
             balance = GetBalance(wallet.Transactions);
-            _memoryCache.Set(GetBalanceCacheKey(wallet.WalletId), balance, TimeSpan.FromMinutes(5));
-            semaphore.Release();
+            _memoryCache.Set(GetBalanceCacheKey(id), balance, TimeSpan.FromMinutes(5));
         }
-        return balance;
+        return Task.FromResult(balance);
     }
 
     public LightMoney GetBalance(IEnumerable<Transaction> transactions)
