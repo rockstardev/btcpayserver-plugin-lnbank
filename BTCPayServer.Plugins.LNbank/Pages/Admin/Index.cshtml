@@ -5,13 +5,19 @@
 
 @{
     ViewData.SetActivePage(LNbankNavPages.AdminWallets, "LNbank Administration");
+    var isBelowLiabilities = Model.TotalNodeBalance < Model.TotalLiabilities;
 }
 
 <div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-3">
     <div>
         <h2 class="my-1">@ViewData["Title"]</h2>
         <div class="text-muted fw-semibold" id="LNbank-WalletBalance">
-            <span data-sensitive>@Helpers.Sats(Model.TotalBalance)</span> in wallets total
+            <span data-sensitive>@Helpers.Sats(Model.TotalBalance)</span> in wallets total. Node balance is
+            <span data-sensitive>@Helpers.Sats(Model.TotalNodeBalance)</span> in local channels.
+            @if (isBelowLiabilities)
+            {
+                <span class="badge bg-warning">Liabilities not met</span>
+            }
         </div>
     </div>
 </div>
@@ -21,11 +27,12 @@
     <partial name="_Nav" model="Model.CurrentWallet"/>
 }
 
-@if (Model.TotalNodeBalance < Model.TotalLiabilities)
+@if (isBelowLiabilities)
 {
     <div class="alert alert-warning mb-5" role="alert">
         The Lightning node balance in local channels (<span data-sensitive>@Helpers.Sats(Model.TotalNodeBalance)</span>) is less than the total LNbank
-        liabilities (<span data-sensitive>@Helpers.Sats(Model.TotalLiabilities)</span>). Please deposit more funds into the internal Lightning node.
+        liabilities (<span data-sensitive>@Helpers.Sats(Model.TotalLiabilities)</span>). The liabilities are not met with a missing difference of
+        <span data-sensitive>@Helpers.Sats(Model.TotalLiabilities - Model.TotalNodeBalance)</span>. Please deposit more funds into the internal Lightning node.
     </div>
 }
 
@@ -38,7 +45,7 @@
         <h4 class="d-flex flex-wrap align-items-center gap-2 mb-3">
             @entry.User.UserName
             <span class="badge bg-light fs-6">
-                <span class="data-sensitive">@Helpers.Sats(entry.TotalBalance)</span>
+                <span data-sensitive>@Helpers.Sats(entry.TotalBalance)</span>
             </span>
         </h4>
         <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 row-cols-xxl-4 g-3 mb-5">
@@ -56,9 +63,9 @@
                             </h5>
                             <div class="card-text d-flex flex-wrap align-items-center justify-content-between gap-2">
                                 <span class="badge bg-light fs-6">
-                                    <span class="data-sensitive">@Helpers.Sats(await WalletService.GetBalance(wallet))</span>
+                                    <span data-sensitive>@Helpers.Sats(await WalletService.GetBalance(wallet))</span>
                                 </span>
-                                <span class="text-muted">
+                                <span class="text-muted" data-sensitive>
                                     @wallet.Transactions.Count transaction@(wallet.Transactions.Count == 1 ? "" : "s")
                                 </span>
                             </div>

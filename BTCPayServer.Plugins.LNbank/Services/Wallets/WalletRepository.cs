@@ -13,6 +13,8 @@ namespace BTCPayServer.Plugins.LNbank.Services.Wallets;
 
 public class WalletRepository
 {
+    private const string BalancesCacheKey = "LNbankWalletBalances";
+
     private readonly LNbankPluginDbContextFactory _dbContextFactory;
     private readonly IMemoryCache _memoryCache;
 
@@ -117,6 +119,7 @@ public class WalletRepository
             wallet.AccessKeys ??= new List<AccessKey>();
             wallet.AccessKeys.Add(new AccessKey { UserId = wallet.UserId, Level = AccessLevel.Admin });
             entry = await dbContext.Wallets.AddAsync(wallet);
+            _memoryCache.Remove(BalancesCacheKey);
         }
         else
         {
@@ -171,6 +174,7 @@ public class WalletRepository
             dbContext.Update(wallet);
         }
         await dbContext.SaveChangesAsync();
+        _memoryCache.Remove(BalancesCacheKey);
     }
 
     public async Task<IEnumerable<Transaction>> GetPendingTransactions()
@@ -351,12 +355,17 @@ public class WalletRepository
         return await queryable.ToListAsync();
     }
 
-    public async Task<long> GetLiabilitiesTotal()
+    public async Task<LightMoney> GetLiabilitiesTotal()
     {
-        await using var dbContext = _dbContextFactory.CreateContext();
-        return await dbContext.Transactions.AsQueryable()
-            .Where(t => t.AmountSettled != null && t.IsSoftDeleted == false)
-            .SumAsync(t => t.AmountSettled);
+        if (!_memoryCache.TryGetValue<long>(BalancesCacheKey, out var total))
+        {
+            await using var dbContext = _dbContextFactory.CreateContext();
+            total = await dbContext.Transactions.Include(t => t.Wallet).AsNoTracking().AsQueryable()
+                .Where(t => t.AmountSettled != null && t.IsSoftDeleted == false && t.Wallet.IsSoftDeleted == false)
+                .SumAsync(t => t.AmountSettled);
+            _memoryCache.Set(BalancesCacheKey, total, TimeSpan.FromMinutes(5));
+        }
+        return total;
     }
 
     public Task<LightMoney> GetBalance(Wallet wallet, CancellationToken cancellationToken = default)
@@ -380,6 +389,7 @@ public class WalletRepository
     private void InvalidateBalanceCache(string walletId)
     {
         _memoryCache.Remove(GetBalanceCacheKey(walletId));
+        _memoryCache.Remove(BalancesCacheKey);
     }
 
     private static string GetBalanceCacheKey(string walletId)

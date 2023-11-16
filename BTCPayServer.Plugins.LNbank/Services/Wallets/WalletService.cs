@@ -469,8 +469,7 @@ public class WalletService
 
     public async Task<LightMoney> GetLiabilitiesTotal()
     {
-        var total = await _walletRepository.GetLiabilitiesTotal();
-        return new LightMoney(total);
+        return await _walletRepository.GetLiabilitiesTotal();
     }
 
     public SemaphoreSlim GetBalanceSemaphore(string walletId)
