@@ -22,7 +22,13 @@
             <div class="col">
                 <div class="card">
                     <div class="card-header d-flex flex-wrap align-items-baseline justify-content-between gap-2">
-                        <h5 class="card-title mb-0">@entry.WithdrawConfig.Name</h5>
+                        <h5 class="card-title mb-0">
+                            @entry.WithdrawConfig.Name
+                            @if (entry.WithdrawConfig.IsSoftDeleted || entry.WithdrawConfig.Wallet.IsSoftDeleted)
+                            {
+                                <span class="text-danger">(Deleted)</span>
+                            }
+                        </h5>
                         <a asp-page="/Wallets/WithdrawConfigs" asp-route-walletId="@entry.WithdrawConfig.WalletId">
                             Manage
                         </a>

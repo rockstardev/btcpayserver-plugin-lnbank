@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Exclude soft deleted wallets when aggregating liabilities. (btcpayserver/btcpayserver#5481)
 
+### Changed
+
+- Admin: Mark deleted Bolt Cards in overview of pending Bolt Cards.
+
 ## [1.8.6]
 
 ### Changed

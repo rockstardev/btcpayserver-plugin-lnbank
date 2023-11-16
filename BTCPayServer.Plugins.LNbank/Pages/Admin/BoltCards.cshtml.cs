@@ -37,6 +37,7 @@ public class BoltCards : BasePageModel
         {
             Status = BoltCardStatus.PendingActivation,
             IncludeWithdrawConfig = true,
+            IncludeWallet = true,
             IsServerAdmin = IsServerAdmin,
             IncludeSoftDeleted = IsServerAdmin
         });
