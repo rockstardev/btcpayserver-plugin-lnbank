@@ -117,11 +117,12 @@
                         var detailsId = $"LNbank-WithdrawConfig-Details-{withdrawConfig.WithdrawConfigId}";
                         var isActive = selectedId == withdrawConfig.WithdrawConfigId;
                         var boltCard = withdrawConfig.BoltCard;
+                        var isDeleted = withdrawConfig.IsSoftDeleted;
                         var transactions = withdrawConfig.GetTransactions();
-                        <tr id="@rowId">
+                        <tr id="@rowId"@(isDeleted ? " data-lnbank-deleted" : "")>
                             <td>
                                 @withdrawConfig.Name
-                                @if (withdrawConfig.IsSoftDeleted)
+                                @if (isDeleted)
                                 {
                                     <span class="text-danger">(Deleted)</span>
                                 }
@@ -298,6 +299,7 @@
                     </tbody>
                 </table>
             </div>
+            <partial name="_AdminShowDeletedToggle"/>
         }
         else
         {

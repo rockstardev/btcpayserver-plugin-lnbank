@@ -144,7 +144,8 @@ else if (Model.HistogramData != null)
                 <tbody id="LNbank-WalletTransactions">
                 @foreach (var transaction in Model.Transactions)
                 {
-                    <tr id="LNbank-Transaction-@transaction.TransactionId">
+                    var isDeleted = transaction.IsSoftDeleted;
+                    <tr id="LNbank-Transaction-@transaction.TransactionId"@(isDeleted ? " data-lnbank-deleted" : "")>
                         <td>
                             <a asp-page="/Transactions/Details" asp-route-walletId="@Model.CurrentWallet.WalletId" asp-route-transactionId="@transaction.TransactionId" class="transaction-details">
                                 @transaction.CreatedAt.ToBrowserDate(ViewsRazor.DateDisplayFormat.Relative)
@@ -205,7 +206,7 @@ else if (Model.HistogramData != null)
                                 </a>
                                 <span>-</span>
                             }
-                            @if (transaction.IsSoftDeleted)
+                            @if (isDeleted)
                             {
                                 <span class="badge bg-danger">Deleted</span>
                             }
@@ -237,6 +238,8 @@ else if (Model.HistogramData != null)
             })
         })()
     </script>
+
+    <partial name="_AdminShowDeletedToggle"/>
 
     <a class="btn btn-secondary dropdown-toggle mt-4 ms-auto" href="#" role="button" id="ExportDropdownToggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         Export

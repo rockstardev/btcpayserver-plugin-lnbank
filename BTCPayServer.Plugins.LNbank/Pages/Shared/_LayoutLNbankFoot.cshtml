@@ -1,2 +1,22 @@
-﻿<script src="~/Resources/lib/signalr/dist/browser/signalr.min.js" asp-append-version="true"></script>
+﻿@using BTCPayServer.Plugins.LNbank.Authentication
+
+<script src="~/Resources/lib/signalr/dist/browser/signalr.min.js" asp-append-version="true"></script>
 <script src="~/Resources/js/lnbank.js" asp-append-version="true"></script>
+<script permission="@LNbankPolicies.CanManageLNbank">
+    (() => {
+        const key = 'lnbank-show-deleted';
+        const val = 'true';
+        if (window.localStorage.getItem(key) === val) {
+            document.querySelectorAll(`input[name="${key}"]`).forEach(e => e.checked = true);
+        }
+        delegate('change', `input[name="${key}"]`, e => {
+            if (e.target.checked) {
+                window.localStorage.setItem(key, val);
+                document.documentElement.dataset.lnbankShowDeleted = val;
+            } else {
+                window.localStorage.removeItem(key);
+                delete document.documentElement.dataset.lnbankShowDeleted;
+            }
+        });
+    })()
+</script>

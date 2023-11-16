@@ -1,2 +1,9 @@
-﻿<link href="~/Resources/css/lnbank.css" rel="stylesheet" asp-append-version="true"/>
+﻿@using BTCPayServer.Plugins.LNbank.Authentication
+
+<link href="~/Resources/css/lnbank.css" rel="stylesheet" asp-append-version="true"/>
 <script>window.LNbank = { hubs: [] }</script>
+<script permission="@LNbankPolicies.CanManageLNbank">
+    if (window.localStorage.getItem('lnbank-show-deleted') === 'true') {
+        document.documentElement.dataset.lnbankShowDeleted = 'true';
+    }
+</script>

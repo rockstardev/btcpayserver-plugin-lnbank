@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Admin: Mark deleted Bolt Cards in overview of pending Bolt Cards.
 
+### Added
+
+- Admin: Add toggle for showing deleted items.
+
 ## [1.8.6]
 
 ### Changed

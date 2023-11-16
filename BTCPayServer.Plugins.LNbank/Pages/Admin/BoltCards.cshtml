@@ -15,16 +15,19 @@
 
 @if (Model.PendingCards.Any())
 {
+    <partial name="_AdminShowDeletedToggle"/>
+
     <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-5">
         @foreach (var entry in Model.PendingCards)
         {
             var activationUrl = Url.Action("ActivateCard", "BoltCard", new {code = entry.BoltCardId}, Request.Scheme);
-            <div class="col">
+            var isDeleted = entry.WithdrawConfig.IsSoftDeleted || entry.WithdrawConfig.Wallet.IsSoftDeleted;
+            <div class="col"@(isDeleted ? " data-lnbank-deleted" : "")>
                 <div class="card">
                     <div class="card-header d-flex flex-wrap align-items-baseline justify-content-between gap-2">
                         <h5 class="card-title mb-0">
                             @entry.WithdrawConfig.Name
-                            @if (entry.WithdrawConfig.IsSoftDeleted || entry.WithdrawConfig.Wallet.IsSoftDeleted)
+                            @if (isDeleted)
                             {
                                 <span class="text-danger">(Deleted)</span>
                             }

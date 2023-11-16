@@ -63,3 +63,10 @@ main #LNbank-TransactionDetails {
 [data-hide-sensitive-info="true"] .lnbank-wallet-balance .ct-label.ct-vertical.ct-start {
   visibility: hidden;
 }
+
+[data-lnbank-deleted] {
+  display: none;
+}
+[data-lnbank-show-deleted="true"] [data-lnbank-deleted] {
+  display: revert;
+}
