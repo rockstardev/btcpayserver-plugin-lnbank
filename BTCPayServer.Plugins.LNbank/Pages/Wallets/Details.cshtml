@@ -11,7 +11,7 @@
     var adminKey = Model.CurrentWallet.AccessKeys.FirstOrDefault(ak => ak.Level == AccessLevel.Admin);
     if (adminKey != null)
     {
-        var endpoint = new Uri($"{Request.Scheme}://{Request.Host}{Request.PathBase.ToUriComponent()}/plugins/lnbank/api/lndhub");
+        var endpoint = new Uri($"{Request.Scheme}://{Request.Host}{Request.PathBase.ToUriComponent()}/plugins/lnbank/api/lndhub/");
         lndhubUrl = $"lndhub://{Model.CurrentWallet.WalletId}:{adminKey.Key}@{endpoint}";
     }
 }

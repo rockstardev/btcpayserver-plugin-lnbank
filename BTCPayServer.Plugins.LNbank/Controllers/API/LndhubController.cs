@@ -55,7 +55,12 @@ public class LndhubController : ControllerBase
 
         switch (type)
         {
-            case "auth":
+            // fake this case as we don't do OAuth
+            case "refresh_token":
+                result = new AuthResponse { AccessToken = req.RefreshToken, RefreshToken = req.RefreshToken };
+                break;
+
+            default:
                 var wallet = await _walletRepository.GetWallet(new WalletsQuery
                 {
                     WalletId = new[] { req.Login },
@@ -67,11 +72,6 @@ public class LndhubController : ControllerBase
                     var accessKey = wallet.AccessKeys.First(a => a.Key == req.Password);
                     result = new AuthResponse { AccessToken = accessKey.Key, RefreshToken = accessKey.Key };
                 }
-                break;
-
-            // fake this case as we don't do OAuth
-            case "refresh_token":
-                result = new AuthResponse { AccessToken = req.RefreshToken, RefreshToken = req.RefreshToken };
                 break;
         }
 
