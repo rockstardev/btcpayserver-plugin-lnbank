@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Wallet API response values.
+- Wallet API: Include Lightning Address Identifier when creating a wallet.
 
 ## [1.8.8]
 

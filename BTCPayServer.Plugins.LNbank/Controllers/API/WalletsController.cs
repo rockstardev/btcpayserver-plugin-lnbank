@@ -70,7 +70,8 @@ public class WalletsController : ControllerBase
         var wallet = new Wallet
         {
             UserId = GetUserId(),
-            Name = request.Name
+            Name = request.Name,
+            LightningAddressIdentifier = request.LightningAddressIdentifier
         };
 
         var entry = await _walletRepository.AddOrUpdateWallet(wallet);
