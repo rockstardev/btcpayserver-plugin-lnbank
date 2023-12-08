@@ -157,13 +157,14 @@ public class WalletService
         if (bolt11.ExpiryDate <= DateTimeOffset.UtcNow)
             throw new PaymentRequestValidationException($"Payment request already expired at {bolt11.ExpiryDate}.");
 
+        var semaphore = GetBalanceSemaphore(wallet.WalletId);
+        await semaphore.WaitAsync(cancellationToken);
+
         // check balance
         var amount = bolt11.MinimumAmount == LightMoney.Zero ? explicitAmount : bolt11.MinimumAmount;
         if (amount == null)
             throw new ArgumentException("Amount must be defined.", nameof(amount));
 
-        var semaphore = GetBalanceSemaphore(wallet.WalletId);
-        await semaphore.WaitAsync(cancellationToken);
         try
         {
             var balance = await GetBalance(wallet);

@@ -53,7 +53,8 @@ public class WalletsController : ControllerBase
             IsServerAdmin = User.IsInRole(Roles.ServerAdmin)
         });
 
-        return Ok(wallets.Select(FromModel));
+        var result = await Task.WhenAll(wallets.Select(FromModel));
+        return Ok(result);
     }
 
     [HttpPost("")]
@@ -73,8 +74,8 @@ public class WalletsController : ControllerBase
         };
 
         var entry = await _walletRepository.AddOrUpdateWallet(wallet);
-
-        return Ok(FromModel(entry));
+        var result = await FromModel(entry);
+        return Ok(result);
     }
 
     [HttpGet("{walletId}")]
@@ -84,7 +85,7 @@ public class WalletsController : ControllerBase
         var wallet = await FetchWallet(walletId);
         return wallet == null
             ? this.CreateAPIError(404, "wallet-not-found", "The wallet was not found")
-            : Ok(FromModel(wallet));
+            : Ok(await FromModel(wallet));
     }
 
     [HttpPut("{walletId}")]
@@ -110,10 +111,11 @@ public class WalletsController : ControllerBase
             return this.CreateAPIError(404, "wallet-not-found", "The wallet was not found");
 
         wallet.Name = request.Name;
+        wallet.LightningAddressIdentifier = request.LightningAddressIdentifier;
 
         var entry = await _walletRepository.AddOrUpdateWallet(wallet);
-
-        return Ok(FromModel(entry));
+        var result = await FromModel(entry);
+        return Ok(result);
     }
 
     [HttpDelete("{walletId}")]
