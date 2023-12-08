@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.8.9]
 
+### Changed
+
+- Export: Transactions are now sorted by creation date.
+
 ### Fixed
 
 - Wallet API response values.

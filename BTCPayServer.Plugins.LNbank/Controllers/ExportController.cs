@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Constants;
 using BTCPayServer.Client;
 using BTCPayServer.Data;
+using BTCPayServer.Plugins.LNbank.Authentication;
 using BTCPayServer.Plugins.LNbank.Data.Models;
 using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using Microsoft.AspNetCore.Authorization;
@@ -30,7 +31,7 @@ public class ExportController : Controller
     }
 
     [HttpGet("{walletId}/{format}")]
-    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Cookie, Policy = Policies.CanViewInvoices)]
+    [Authorize(AuthenticationSchemes = AuthenticationSchemes.Cookie, Policy = LNbankPolicies.CanViewWallet)]
     public async Task<IActionResult> Export(string walletId, string format)
     {
         var wallet = await _walletRepository.GetWallet(new WalletsQuery
@@ -45,7 +46,7 @@ public class ExportController : Controller
             return NotFound();
         }
 
-        var transactions = wallet.Transactions.Select(ToExportModel);
+        var transactions = wallet.Transactions.OrderByDescending(t => t.CreatedAt).Select(ToExportModel);
         var data = format switch
         {
             "json" => ToJson(transactions),
