@@ -160,8 +160,9 @@ public class LightningController : ControllerBase
                 Type = TransactionType.Invoice
             };
             var offset = Convert.ToInt32(offsetIndex);
-            var transactions = (await _walletRepository.GetTransactions(query)).Skip(offset);
-
+            var transactions = (await _walletRepository.GetTransactions(query))
+                .OrderByDescending(t => t.CreatedAt)
+                .Skip(offset);
             var invoices = transactions.Select(ToLightningInvoiceData);
             return Ok(invoices);
         }
@@ -215,8 +216,9 @@ public class LightningController : ControllerBase
                 Type = TransactionType.Payment
             };
             var offset = Convert.ToInt32(offsetIndex);
-            var transactions = (await _walletRepository.GetTransactions(query)).Skip(offset);
-
+            var transactions = (await _walletRepository.GetTransactions(query))
+                .OrderByDescending(t => t.CreatedAt)
+                .Skip(offset);
             var payments = transactions.Select(ToLightningPaymentData);
             return Ok(payments);
         }

@@ -355,34 +355,41 @@ public class WalletRepository
         return await queryable.ToListAsync();
     }
 
-    public async Task<LightMoney> GetLiabilitiesTotal()
+    public async Task<LightMoney> GetLiabilitiesTotal(CancellationToken cancellationToken = default)
     {
         if (!_memoryCache.TryGetValue<long>(BalancesCacheKey, out var total))
         {
             await using var dbContext = _dbContextFactory.CreateContext();
-            total = await dbContext.Transactions.Include(t => t.Wallet).AsNoTracking().AsQueryable()
+            total = await dbContext.Transactions
+                .Include(t => t.Wallet).AsNoTracking().AsQueryable()
                 .Where(t => t.AmountSettled != null && t.IsSoftDeleted == false && t.Wallet.IsSoftDeleted == false)
-                .SumAsync(t => t.AmountSettled);
+                .SumAsync(t => t.AmountSettled, cancellationToken: cancellationToken);
             _memoryCache.Set(BalancesCacheKey, total, TimeSpan.FromMinutes(5));
         }
         return total;
     }
 
-    public Task<LightMoney> GetBalance(Wallet wallet, CancellationToken cancellationToken = default)
+    public async Task<LightMoney> GetBalance(Wallet wallet, CancellationToken cancellationToken = default)
     {
-        var id = wallet.WalletId;
-        if (!_memoryCache.TryGetValue<LightMoney>(GetBalanceCacheKey(id), out var balance))
+        var walletId = wallet.WalletId;
+        var cacheKey = GetBalanceCacheKey(walletId);
+        if (!_memoryCache.TryGetValue<LightMoney>(cacheKey, out var balance))
         {
-            balance = GetBalance(wallet.Transactions);
-            _memoryCache.Set(GetBalanceCacheKey(id), balance, TimeSpan.FromMinutes(5));
+            await using var dbContext = _dbContextFactory.CreateContext();
+            var transactions = await dbContext.Transactions.AsNoTracking().AsQueryable()
+                .Where(t => t.WalletId == walletId && t.AmountSettled != null && t.IsSoftDeleted == false)
+                .ToListAsync(cancellationToken: cancellationToken);
+            balance = GetBalance(transactions);
+            _memoryCache.Set(cacheKey, balance, TimeSpan.FromMinutes(5));
         }
-        return Task.FromResult(balance);
+        return balance;
     }
 
     public LightMoney GetBalance(IEnumerable<Transaction> transactions)
     {
         return transactions
             .Where(t => t.AmountSettled != null && t.IsSoftDeleted == false)
+            .OrderByDescending(t => t.CreatedAt)
             .Sum(t => t.AmountSettled - (t.HasRoutingFee ? t.RoutingFee : LightMoney.Zero));
     }
 
