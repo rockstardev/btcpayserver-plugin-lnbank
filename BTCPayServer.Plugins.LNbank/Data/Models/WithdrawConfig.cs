@@ -1,12 +1,9 @@
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using BTCPayServer.Lightning;
-using BTCPayServer.Plugins.LNbank.Services;
-using BTCPayServer.Plugins.LNbank.Services.Wallets;
 using Microsoft.EntityFrameworkCore;
 
 namespace BTCPayServer.Plugins.LNbank.Data.Models;
